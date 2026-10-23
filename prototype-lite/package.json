@@ -1,0 +1,31 @@
+{
+  "name": "minddialogue-workstation-lite",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "「言心」MindDialogue 精简版 · 仅分析工作台离线闭环（需求编号 7008111111）",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "verify": "node scripts/verify-requirement-coverage.mjs",
+    "demo-multi": "node scripts/demo-multisource.mjs"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.1",
+    "antd": "^5.22.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/ws": "^8.5.13",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "ws": "^8.18.0"
+  }
+}

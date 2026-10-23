@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>「言心」精简版 · 界面可视稿（实拍自 prototype-lite）</title>
+<style>
+  :root { --line:#dfe3ea; --ink:#1c2330; --muted:#63708a; --accent:#1664ff; }
+  * { box-sizing:border-box }
+  body { margin:0; padding:40px 24px 80px; background:#f5f6f8; color:var(--ink);
+    font:15px/1.7 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+  main { max-width:1280px; margin:0 auto; }
+  h1 { font-size:26px; margin:0 0 6px; }
+  .lede { color:var(--muted); margin:0 0 26px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 2px 14px rgba(20,30,50,.06); padding:26px 30px 30px; margin:22px 0; }
+  .step { display:inline-block; background:var(--accent); color:#fff; font-size:12.5px;
+    border-radius:20px; padding:2px 12px; margin-right:10px; vertical-align:2px; }
+  h2 { font-size:19px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13.5px; margin:2px 0 14px; }
+  img { width:100%; border:1px solid var(--line); border-radius:8px; display:block; }
+  ul { margin:14px 0 0; padding-left:20px }
+  li { margin:5px 0 }
+  .tag { display:inline-block; font:12px/1.6 ui-monospace,Menlo,monospace; background:#eef3ff;
+    color:#134272; border:1px solid #c9d9f7; border-radius:4px; padding:0 7px; margin:0 4px; }
+  .flow { background:#fff; border:1px dashed #b9c6de; border-radius:10px; padding:16px 22px;
+    font-size:14.5px; color:#2b3548; }
+</style>
+</head>
+<body>
+<main>
+  <h1>「言心」MindDialogue 精简版 · 界面可视稿</h1>
+  <p class="lede">需求编号 7008111111 · 以下 13 幅画面全部<b>实拍自可运行原型</b> <code>prototype-lite/</code>（非设计稿）：前 5 幅为音视频单路主链路，后 8 幅为多信号源（四路素材）链路；
+  给客户确认用，同时是开发交付的界面基线。</p>
+
+  <div class="flow">主链路：<b>M1 素材上传与会话</b> → <b>M2 分析过程（五阶段批分析）</b> → <b>M3 分析结果（六类异常 + 三级归因）</b> → <b>M4 分析报告（起草/审批/发布）</b>。
+  本版不含实时监看、跨终端协同与硬件形态；心理结论一律为模型推断、非临床诊断。</div>
+
+  <div class="card">
+    <span class="step">M1</span><h2>任务台 · 素材导入与会话列表</h2>
+    <p class="sub">分析师席位登录后第一屏；「新建会话 → 已有素材导入」选择本机录音/录像，仅读元数据登记，授权文书号为服务端硬卡口。</p>
+    <img src="可视稿/01_任务台_素材导入.png" alt="任务台">
+    <ul>
+      <li>统计卡收敛为离线口径：采集中 / <b>离线分析中</b> / <b>分析完成</b> / <b>待审批报告</b> / 在线席位。</li>
+      <li>来源列区分「离线导入 · N 份」（逐份列出文件名）与历史「实时采集」；导入行才有「离线分析」动作，归档行该按钮置灰。</li>
+      <li><span class="tag">28.01</span><span class="tag">28.05</span> 语音 / 语音+视频文件即"单一或多种信号输入"的离线实例。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M2</span><h2>分析过程 · 批分析逐段进度（单素材最小闭环）</h2>
+    <p class="sub">点「离线分析」后行内出现进度标签（截图实拍于 39% · 已完成解封装 / 语音通道 / 语音特征三步，当前步为语义通道）；一段素材 7 步：解封装 → 语音通道 → 语音特征 → 语义 → 视觉 → 生理 → 融合判定与报告起草，进度经 WS 实时广播。</p>
+    <img src="可视稿/02_分析过程_批分析进度.png" alt="分析过程">
+    <ul>
+      <li>SES-20261022-N07 为实拍时新建的导入会话（询问谈话_录像样例_156s.mp4，4.4 MB / 时基 156s 由本机读出）。</li>
+      <li>归档只读会话不可发起（服务端 409）；产物只落在本会话，口径强制「离线导入 · 非实时」。</li>
+      <li><span class="tag">28.06</span> 单模态/多模态由素材类型自动决定，不产出假 0 值。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M3</span><h2>分析结果 · 六类异常与语义影响值</h2>
+    <p class="sub">批分析完成后的结果页：概览卡（上报异常 7 / 覆盖模态 6/6 / 裁撤 0）、六类信号可用性行、异常事件表、话题切分与四维影响值。</p>
+    <img src="可视稿/03_分析结果_异常与影响值.png" alt="分析结果">
+    <ul>
+      <li>异常表逐类命中：语音(EV-001) 语义(EV-002) 表情(EV-003) 生理rPPG(EV-004) 姿态(EV-005) 手部(EV-006) + 跨模态聚合升级(EV-007)。</li>
+      <li><span class="tag">28.04</span><span class="tag">28.07</span> 六类异常全覆盖；<span class="tag">28.02</span> 分角色置信度、话题边界依据、影响值四维分解均可点开核。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M3</span><h2>分析结果 · 三级归因证据链（核心差异点）</h2>
+    <p class="sub">点异常行展开归因抽屉：L1 观察层（物理量+单位+时间窗）→ L2 候选规则（权重+文献+命中态）→ L3 结论（置信度 + 反事实 + 免责声明）；另有跨模态因果链视图。</p>
+    <img src="可视稿/04_三级归因抽屉.png" alt="三级归因">
+    <ul>
+      <li>截图实拍：EV-001「音调升高+jitter」→ R-VOC-03 命中（0.62）→ 结论「应激性紧张（中度）0.58」，反事实与"非临床心理诊断"常驻。</li>
+      <li>抽屉顶部标「证据素材：询问谈话_录像样例_156s.mp4（视频（主信号））」——多路素材下每条告警都要能回指是哪几份文件撑起来的，主信号事件另按 <code>source_assets</code> 列全（见 11 表「素材」列）。</li>
+      <li><span class="tag">28.01</span><span class="tag">28.03</span> "分析行为异常背后的心理原因"保持推断性质——同类产品（TrueSight/云心测/一心心智）均未产品化此证据链。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M4</span><h2>分析报告 · 起草 / 审批 / 发布</h2>
+    <p class="sub">批分析完成后自动起草报告；分析师不能自批，复核人审批/驳回（理由必填）后发布导出；导出动作写入哈希链审计。</p>
+    <img src="可视稿/05_分析报告与审批.png" alt="分析报告">
+    <ul>
+      <li>报告口径自动标注「离线导入 · 非实时」，含异常清单与归因摘要。</li>
+      <li><span class="tag">28.08</span> 实测动线终点：现场上传招标方素材 → 分钟级出报告，全程留痕可追溯。</li>
+    </ul>
+  </div>
+
+  <h1 style="font-size:21px;margin:38px 0 6px">多信号源：四类素材登记 → 逐份切片 → 汇成一份报告</h1>
+  <p class="lede" style="margin-bottom:18px">以下 8 幅实拍自同一次四路素材批分析（会话 <code>SES-20261022-N08</code>：录像 + 录音 + 近红外采样序列 + 毫米波采样序列，报告 <code>RP-2026-07</code>）。
+  口径详见 <code>06_多信号源上传与硬件接入说明.md</code>。</p>
+
+  <div class="card">
+    <span class="step">M1</span><h2>任务台 · 多源素材登记与批分析入口</h2>
+    <p class="sub">导入行显示「离线导入 · 4 份」并逐份列出文件名，含扩展信号时追加标签；行内动作按状态三态切换：离线分析 → 进度标签 → 查看结果。</p>
+    <img src="可视稿/06_任务台_多源素材登记.png" alt="任务台多源素材">
+    <ul>
+      <li>统计卡新增「离线分析中」，与「分析完成」分列——批处理是异步的，不能只看已完成数。</li>
+      <li>归档只读会话（SES-2026-1017-V31）的「离线分析」置灰，服务端同样 409。</li>
+      <li><span class="tag">28.01</span> 多种信号输入在这一版落到"多路文件可登记"，硬件在线接入属后续项。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M1</span><h2>新建会话 · 四路素材分框登记（音视频为主，扩展信号可选）</h2>
+    <p class="sub">主信号两框（视频 / 音频）+ 扩展信号两框（近红外 / 毫米波，标注"可选"）；本机读元数据后进入已登记列表，可逐份移除并显示主/扩展计数。</p>
+    <img src="可视稿/07_新建会话_四路素材上传.png" alt="四路素材上传">
+    <ul>
+      <li>截图实拍：四份素材时长 156s / 156s / 152s / 152s 全部由本机读出（音视频取容器元数据，采样序列取首列时基）。</li>
+      <li>登记即参与：提示语写死"但登记后每一份都会进入批分析并出现在报告里"，没有"跳过某份素材"的开关。</li>
+      <li>授权文书号为服务端硬卡口（R1）；扩展信号声明为文件级导入而非硬件在线接入。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M2</span><h2>分析过程 · 逐素材分片推进（20 段）</h2>
+    <p class="sub">进度按素材分组：每份素材各跑自己的解析链，<code>✓</code> 已完成 / <code>▶</code> 进行中 / <code>·</code> 待执行，末段为会话层融合；进度经 WS 实时广播。</p>
+    <img src="可视稿/08_分析过程_逐素材切片进度.png" alt="逐素材进度">
+    <ul>
+      <li>视频 6 段（解封装→语音→语音特征→语义→视觉→生理）、音频 5 段（无画面帧故无视觉段）、扩展信号各 4 段（读序列→通道配对→伪迹剔除→基线校正）。</li>
+      <li>每段步骤名带文件名，看得见"现在在算哪一份"，而不是一个总百分比。</li>
+      <li><span class="tag">28.06</span> 单模态/多模态由素材决定：音频素材这一段就不存在视觉通道步骤。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M3</span><h2>分析结果 · 汇总（全部素材参与）</h2>
+    <p class="sub">概览卡新增「登记素材 4 / 全部参与」「其中扩展信号 2」；顶部提示块逐份列出素材与角色，并写明脚本链可用模态、上报/裁撤计数与判定口径。</p>
+    <img src="可视稿/09_分析结果_汇总与模态可用性.png" alt="结果汇总">
+    <ul>
+      <li>判定口径明示 <code>E1 融合 + E2 判定（与实时监看同一函数）· 主素材 询问谈话_录像样例_156s.mp4</code>——融合在会话层，不在素材层。</li>
+      <li>本页结论与实时监看结论分道：不进现场工单、不改监看灯色。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M3</span><h2>分析结果 · 素材切片卡与生理趋势</h2>
+    <p class="sub">每份素材一张卡：角色标签（进全链判定 / 只到生理趋势层）、质量标签、解析切片清单、六路模态 ✓/✕、支撑事件跳转；扩展信号另附趋势表（基线→峰值→末段值 + 轨迹）与"本路为什么只到趋势层"逐条列示。</p>
+    <img src="可视稿/10_分析结果_素材切片与趋势.png" alt="素材切片与趋势">
+    <ul>
+      <li>音频卡显示表情/姿态/手部/生理四路 <code>✕</code>，同时仍承载 5 条事件——"这一路没素材"与"这一路没检出"是两件事。</li>
+      <li>近红外卡：HbO 0.150→0.260 mmol·mm/L、头动占比 7.7→18.0%，时基明示取"素材登记时长"。</li>
+      <li>毫米波卡因体动幅度超判据被标"降级"，趋势仅供复核——降级原因与结论上限同屏出现。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M3</span><h2>分析结果 · 六类异常表（含素材列与封顶标记）</h2>
+    <p class="sub">异常表新增「素材」列，逐条标出承载素材；扩展信号条目在心理原因结论列显示 <code>只到趋势层 · 不出归因</code>，与主信号的三级归因条目分列。</p>
+    <img src="可视稿/11_分析结果_六类信号与异常表.png" alt="异常表">
+    <ul>
+      <li>实拍：主信号 7 条（含跨模态同窗升级 EV-007 · 0.83）+ 扩展信号 2 条（EV-X03 ALERT 0.66 / EV-X04 WARN 0.14，候选规则层为空）。</li>
+      <li>此处的 <code>confidence</code> 在扩展信号行是趋势显著性折算值，不是归因置信度——同一列两种含义已在结果页与报告同时声明。</li>
+      <li><span class="tag">28.07</span> 六类异常全覆盖仍由音视频两路主素材达成，扩展信号不参与凑类。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M4</span><h2>分析报告 · 自动起草（含精度受限块）</h2>
+    <p class="sub">批分析完成后自动起草；「精度受限」块由素材构成自动生成：列出扩展信号份数、封顶口径、与 rPPG 不可互为校验的原因、降级素材与判据。</p>
+    <img src="可视稿/12_分析报告_草稿与审批流.png" alt="报告起草">
+    <ul>
+      <li>章节二「素材切片与各自贡献」逐份列示：可解析模态、解析段数、支撑事件、质量、趋势数值、结论上限。</li>
+      <li>职责分离不变：分析师提交复核，复核人审批，驳回理由必填，缺「局限与免责」章节服务端 422 拦下。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="step">M4</span><h2>报告导出 · 附表 A 素材切片一览（下载 / 打印件）</h2>
+    <p class="sub">导出与打印共用同一份 HTML：正文六章 + <b>附表 A · 素材切片一览</b>（素材文件 / 信号源 / 角色 / 可解析模态 / 不可用模态 / 支撑事件数 / 质量 / 结论上限）+ 附表 B 修订与审批流水；未发布件带「草稿 · 未经复核审批」水印。</p>
+    <img src="可视稿/13_报告导出_附表A素材切片.png" alt="报告导出附表">
+    <ul>
+      <li>脚注保留数据来源与"导出未加密（SM4 封装未实现）"披露，打印后同样在纸上。</li>
+      <li>同批可导出 CSV（含 <code>asset</code> 列与 <code>trend_only（不出归因）</code> 标记、被裁撤条目），导出动作写入哈希链审计。</li>
+      <li><span class="tag">28.08</span> 实测动线终点：现场上传招标方多路素材 → 分钟级出可下载打印的报告。</li>
+    </ul>
+  </div>
+
+  <p class="sub">拍摄方式：全部实拍自运行中的 <code>prototype-lite</code>（127.0.0.1:5185），工装为 <code>精简版/tools/shot.mjs</code>（无头 Chrome + 席位注入，精简版自带副本）。07 由 <code>prototype-lite/scripts/inject-upload-shot.js</code> 作 <code>--pre</code> 注入，把 <code>public/demo/</code> 下四路真实素材经页面自身的 drop → 元数据读取 → 登记链路拖入；08 用 <code>node scripts/demo-multisource.mjs --no-wait</code> 只起批不等待、边跑边拍；09—11 与 13 的演示数据由 <code>node scripts/demo-multisource.mjs</code> 起批到完成后备好，结果页滚动的是内层 <code>.stage-area</code>。逐条命令见 <code>README.md</code>「可视稿重拍」，断言（<code>npm run verify</code> 49 条）与画面同批产出。</p>
+</main>
+</body>
+</html>

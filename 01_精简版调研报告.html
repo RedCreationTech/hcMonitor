@@ -1,0 +1,82 @@
+<!doctype html><html lang=zh-CN><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>精简版调研报告 · 需求核验 / 类似产品 / 技术学术依据</title><style>
+:root { --line:#dfe3ea; --ink:#1c2330; --muted:#63708a; --bg:#fff; --accent:#0b57d0; }
+* { box-sizing:border-box }
+body { margin:0; padding:40px 24px 80px; background:#f5f6f8; color:var(--ink);
+  font:15px/1.7 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+main { max-width:1360px; margin:0 auto; background:var(--bg); padding:44px 48px 64px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 14px rgba(20,30,50,.06); }
+h1 { font-size:27px; margin:0 0 18px; padding-bottom:14px; border-bottom:3px solid var(--ink); }
+h2 { font-size:20px; margin:38px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+h3 { font-size:17px; margin:26px 0 10px; color:#2b3548 }
+p { margin:10px 0 }
+code { font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace; background:#f0f2f6;
+  padding:1px 5px; border-radius:4px; color:#134272; word-break:break-all }
+blockquote { margin:14px 0; padding:10px 16px; background:#f7f9fc; border-left:4px solid #b9c6de;
+  color:#3d4a63; border-radius:0 6px 6px 0 }
+blockquote p { margin:4px 0 }
+ul { margin:10px 0; padding-left:22px }
+li { margin:4px 0 }
+hr { border:0; border-top:1px solid var(--line); margin:30px 0 }
+.tablewrap { overflow-x:auto; margin:14px 0 22px; border:1px solid var(--line); border-radius:8px }
+table { border-collapse:collapse; width:100%; font-size:13.5px }
+th,td { border-bottom:1px solid var(--line); border-right:1px solid #eceff4;
+  padding:9px 11px; text-align:left; vertical-align:top }
+th { background:#eef2f8; font-weight:600; white-space:nowrap; position:sticky; top:0; z-index:2 }
+tr:last-child td { border-bottom:0 }
+td:first-child { white-space:nowrap; font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:12.5px; color:var(--muted) }
+tbody tr:nth-child(even) { background:#fbfcfe }
+.meta { color:var(--muted); font-size:13px; margin:0 0 26px }
+figure { margin:16px 0 22px; padding:0 }
+figure img { display:block; width:100%; max-width:1180px; border:1px solid var(--line);
+  border-radius:8px; box-shadow:0 2px 10px rgba(20,30,50,.08) }
+figcaption { margin-top:8px; color:var(--muted); font-size:12.5px; padding-left:10px;
+  border-left:3px solid #b9c6de }
+pre { margin:14px 0 22px; padding:14px 16px; background:#f7f9fc; border:1px solid var(--line);
+  border-left:4px solid #b9c6de; border-radius:8px; overflow-x:auto }
+pre code { background:none; padding:0; color:#2b3548; font-size:12.5px; line-height:1.6;
+  white-space:pre; word-break:normal }
+p img { max-width:100% }
+@media print {
+  body { background:#fff; padding:0 }
+  main { border:0; box-shadow:none; padding:0; max-width:none }
+  th { position:static }
+  .tablewrap { overflow:visible; break-inside:auto }
+  tr { break-inside:avoid }
+  figure { break-inside:avoid }
+  figure img { max-width:none; box-shadow:none }
+  pre { break-inside:avoid; overflow:visible; white-space:pre-wrap }
+  /* 六列矩阵在 A4 横向也放不下：定宽 + 断词，保证「缺口与补充动作」不被裁到页外 */
+  table { font-size:10.5px; table-layout:fixed }
+  th,td { word-break:break-word; overflow-wrap:anywhere }
+}
+</style></head><body><main><h1>精简版调研报告 · 需求核验 / 类似产品 / 技术学术依据</h1>
+<p><strong>项目</strong>：基于对话内容的行为异常检测和心理变化分析技术（中关村新域新质创新挑战赛，需求编号 7008111111）</p>
+<p><strong>产品</strong>：「言心」MindDialogue 精简版 —— 仅分析工作台的离线音视频分析闭环</p>
+<p><strong>日期</strong>：2026-10-21 · 上游原文：<code>中关村新域新质创新挑战赛需求汇编.pdf</code> 正文页 80—81（PDF 物理页 85—86）、<code>独立软件开发需求清单-人员分配版本.docx</code> §28</p>
+<blockquote><p>本文回答三个问题：① 招标原文到底要求了什么（逐字核验）；② 市面上"上传音视频→出分析报告"的同类产品长什么样；③ 精简为离线工作台在技术上有没有学术依据。结论先行：<strong>离线工作台能完整或基本覆盖 28.01—28.07 全部功能与指标条目；被放弃的实时监看、跨终端协同、硬件形态均为完整版自行加码项，不是招标要求。</strong></p></blockquote>
+<hr>
+<h2>一、招标原文核验（28.01—28.08 逐字）</h2>
+<ul><li><strong>28.01 需求简述</strong>：「随着多模态大模型技术的发展，理解人的情绪情感和心理变化成为其技术攻关重点。本需要以对话内容作为心理变化的驱动要素，<strong>不限于语音、视频、近红外、毫米波等单一或多种信号的输入</strong>，捕捉谈话对象的言语表达、身体姿态、手部动作、面部表情等行为或生理指标异常，并分析其行为异常背后的心理原因。」</li><li><strong>28.02 功能要求 1</strong>：「对对话内容进行分角色识别和话题提取，基于其语义分析影响值；」</li><li><strong>28.03 功能要求 2</strong>：「以语音等作为信号输入，分析语音特征、言语表达异常，并分析心理原因；」</li><li><strong>28.04 功能要求 3</strong>：「不限信号输入，分析语音特征、言语表达、身体姿态、手部动作、面部表情等行为或生理指标异常，并分析其异常背后的心理原因。」</li><li><strong>28.05 主要指标 1（输入）</strong>：「语音模态、语音+视频模态或多模态等；」</li><li><strong>28.06 主要指标 2（分析方法）</strong>：「可单模态或多模态；」</li><li><strong>28.07 主要指标 3（异常类型）</strong>：「包括但不限于言语表达、语音特征、身体姿态、手部动作、面部表情、生理指标等，提供行为异常心理原因分析。」</li><li><strong>28.08 实测要求</strong>：「主要考察参赛方提供的行为异常检测能力。」</li><li>商务信息：合作意向为定制研发/联合研发/技术改造；年度市场规模 500—1000 万元；比选方式「<strong>文字解决方案 + 产品实测</strong>」；提交截止 <strong>2026-10-31</strong>。</li></ul>
+<p><strong>核验结论（对精简版最有利的三条事实）</strong>：</p>
+<p>1. <strong>原文没有任何量化门槛</strong>——无准确率、无响应时延、无部署形态要求；docx §28 与 PDF 逐字一致，仅补充分析注记（心理原因"只能作为模型推断，不是确定事实或心理诊断"、"原文未定义影响值量纲"、"原文未给出定量门槛"）。</p>
+<p>2. <strong>原文没有要求实时流式</strong>——输入表述为"不限于……单一或多种信号的输入"，离线音视频文件是"语音+视频多模态输入"的合法实例。</p>
+<p>3. <strong>28.08 实测考察的是"行为异常检测能力"</strong>——现场上传招标方素材、离线跑出异常与归因报告，仍然是"产品实测"，只是演示冲击力从"边谈边看"变为"分钟级出全套结论"。</p>
+<h2>二、类似产品调研（离线分析→报告形态）</h2>
+<h3>2.1 国外：客服通话分析已把"离线闭环"做成标准形态</h3>
+<div class="tablewrap"><table><thead><tr><th>产品</th><th>形态</th><th>最小闭环</th><th>借鉴点</th></tr></thead><tbody><tr><td>CallMiner</td><td>post-call analytics</td><td>通话录音导入→转写→合规/风险检测→审计报告</td><td>"事后精准分析"与"实时告警"分道，两条口径不互相顶替</td></tr><tr><td>Observe.AI</td><td>离线 QA</td><td>专有 ASR 说话人分离转写→PII 脱敏→自动打分→报表</td><td>说话人分离是转写质量的前置卡点，须显性呈现置信度</td></tr><tr><td>微软 Dynamics 365 对话智能</td><td>批处理</td><td><strong>上传录音文件→几分钟后出仪表盘</strong></td><td>精简版四屏结构（上传/过程/结果/报告）与之同构，证明该形态用户心智已建立</td></tr></tbody></table></div>
+<h3>2.2 国内：政法/谈话场景同类产品普遍"既可在线也可离线"，但归因深度浅</h3>
+<div class="tablewrap"><table><thead><tr><th>产品</th><th>与本项目关系</th><th>关键事实</th></tr></thead><tbody><tr><td>连信数字洞见 TrueSight（第一梯队，重合度极高）</td><td>最强竞品</td><td>文本/视频/音频多模态输入、八大维度输出、16000+ 循证规则图谱；其 realtime 版主打毫秒级+智能眼镜硬件</td></tr><tr><td>非接触式语音微表情心理分析及审讯系统</td><td>同场景</td><td>明标"既可在线实时分析也可事后精准分析"，内置<strong>离线语音转写引擎</strong>、事后音视频分类分析</td></tr><tr><td>云心测深层语音情感分析</td><td>同类</td><td>"既可实时分析也可录音分析并提供深度分析报告"，151 种声学参数</td></tr><tr><td>检信智能情绪识别谈话系统</td><td>同类</td><td>离线语音识别、无需互联网（内网合规卖点对标国产化要求）</td></tr><tr><td>一心心智面部情绪分析</td><td>同类</td><td>明确支持<strong>分析历史录像</strong>并生成报告</td></tr><tr><td>一眸科技</td><td>同类</td><td>离线算力盒 67 TOPS——"离线/本地闭环"已有市场先例</td></tr></tbody></table></div>
+<p><strong>差异化立足点（与完整版一致，且精简版更聚焦）</strong>：上述产品普遍止步于"情绪分数 + 风险点定位回放"，<strong>没有一家把"异常→候选规则+文献→结论（含反事实与免责）"的三级归因证据链产品化</strong>。精简版保留这条链路，等于用最小形态携带最强差异点。与连信的错位：它押注毫秒级实时与眼镜硬件，我们押注离线高精度与可解释归因——不与对手的硬件生态正面碰撞。</p>
+<h2>三、技术学术依据</h2>
+<h3>3.1 逐环节文献支撑（均可核实，供规则库与方案引用）</h3>
+<div class="tablewrap"><table><thead><tr><th>环节</th><th>文献</th><th>关键结论 / 对精简版的支撑</th></tr></thead><tbody><tr><td>语音特征</td><td>Eyben et al., *GeMAPS for Voice Research and Affective Computing*, IEEE Trans. Affective Computing 7(2), 2016</td><td>88 维可解释声学特征专为情感研究标准化设计，<strong>CPU 可离线抽取</strong>——支撑"特征+统计检测"而非黑盒 SER</td></tr><tr><td>说话人分离</td><td>Bredin et al., *pyannote.audio 2.1 speaker diarization pipeline*, Interspeech 2023</td><td>官方离线管线基准：AISHELL-4 DER 12.2%、AMI(IHM) 18.8%——<strong>整段离线评测即其标准用法</strong></td></tr><tr><td>ASR</td><td>Radford et al., *Robust Speech Recognition via Large-Scale Weak Supervision* (Whisper), ICML 2023</td><td>68 万小时弱监督，对整段音频做<strong>双向注意力解码</strong>，噪声/口音鲁棒</td></tr><tr><td>面部表情</td><td>Ekman &amp; Friesen, FACS, 1969/1978；Yan et al., *CASME II*, PLoS ONE 9(1), 2014</td><td>AU 有解剖学基础；微表情持续 40–500ms 需切片分析。<strong>注意</strong>：微表情有效性存在学术争议（*Automatic Micro-Expression Analysis: Open Challenges*），恰好支持"推断+反事实"口径而非断言</td></tr><tr><td>身体姿态</td><td>Xu et al., *ViTPose*, NeurIPS 2022（COCO 81.1 AP）</td><td>逐帧关键点检测<strong>天然适合离线视频</strong>重放</td></tr><tr><td>手部动作</td><td>Zhang et al., *MediaPipe Hands*, arXiv:2006.10214</td><td>21 个 3D 关键点，端侧/CPU 可跑，对部分遮挡鲁棒</td></tr><tr><td>生理指标</td><td>De Haan &amp; Jeanne, IEEE TBME 60(10), 2013；Wang et al., *Algorithmic Principles of Remote PPG*, IEEE TBME 64(7), 2017；Chen &amp; McDuff, *DeepPhys*, ECCV 2018</td><td>rPPG 受控条件误差约 ±3bpm 级，估计窗 8s——<strong>逐窗离线重放可复算</strong></td></tr><tr><td>HRV-应激</td><td>Kim et al., *Stress and Heart Rate Variability: A Meta-Analysis*, Psychiatry Investigation 15(3), 2018</td><td>为生理归因规则 R-PSY-19 提供可替换的<strong>真实出处</strong>（替换占位文献）</td></tr><tr><td>语义话题</td><td>Reimers &amp; Gurevych, *Sentence-BERT*, EMNLP 2019</td><td>句嵌入余弦相似度直接可比——支撑"相邻句嵌入跳变"边界检测</td></tr><tr><td>多模态融合</td><td>Baltrušaitis, Ahuja &amp; Moreno, *Multimodal Machine Learning: A Survey and Taxonomy*, IEEE TPAMI 41(2), 2019；Lian et al., *A Survey of Deep Learning-Based Multimodal ER*, Entropy 25(10), 2023</td><td>混合/对齐/融合/co-learning 五问题框架——佐证跨模态同窗聚合可行</td></tr><tr><td>言语异常→心理</td><td>DePaulo et al., *Cues to Deception*, Psychological Bulletin 129(2), 2003</td><td>1338 项估计元分析：言语线索<strong>真实存在但效应弱</strong>——是"心理原因只能推断、必带反事实"的最有力文献</td></tr><tr><td>可解释性</td><td>*A Survey of Affective Computing for Emotional Support*, arXiv:2505.01542, 2025</td><td>可解释性被列为情感计算核心验证维度——归因链设计有综述级背书</td></tr></tbody></table></div>
+<h3>3.2 离线分析相对实时流式的精度优势（精简版的核心论据）</h3>
+<p>1. <strong>ASR</strong>：同模型流式模式 WER 比离线高约 0.3—1.1 个百分点（Qwen3-ASR 官方基准：LibriSpeech clean 1.63%→1.95%）；Google Gemini Transcribe 亦报流式平均 WER 4.0% vs 非流式 2.6%。原因：流式缺右上下文，离线解码可用完整双向语境。</p>
+<p>2. <strong>说话人分离</strong>：在线 diarization 只能看过去窗口；pyannote 官方基准（AISHELL-4/AMI）均为整段离线评测；NVIDIA/NeMo 将流式与离线<strong>分榜</strong>，共识是离线全局聚类 DER 更低——流式以延迟换精度。</p>
+<p>3. <strong>视频时序窗</strong>：rPPG（8s 估计窗）、HRV 持续判定（≥60s）、微表情闪现切片都依赖多帧窗口，离线重放可<strong>双向取窗、可复算</strong>，实时流只能前瞻。</p>
+<p><strong>叙事定调</strong>：精简版不是"功能缩水"，而是<strong>以放弃实时性换取每一环节的可验证精度</strong>——这与 28.08"考察行为异常检测能力"的实测导向完全一致。</p>
+<h2>四、风险与红线（沿用完整版口径，精简版同样受约束）</h2>
+<ul><li>心理原因一律为<strong>模型推断、非临床诊断</strong>；结论必带反事实与免责声明（28.04 原文注记）。</li><li>当前原型为脚本回放，无真实推理；量化指标只允许"文献参考水平 / 实测现场标定"两类标签，<strong>严禁编造 DOI、不得引用演示占位值</strong>。</li><li>规则库占位文献（完整版 G5：R-PSY-22 + 8 条脚本候选规则）在精简版界面中保留"演示占位"标注；投标截止前须替换为 3.1 表中的真实文献或标"待审"。</li><li>近红外 / 毫米波：原文为"不限于"开放面而非硬要求，精简版<strong>按采样序列文件级导入接入</strong>（登记、切片、趋势、报告逐份列示），但结论<strong>封顶在生理趋势层</strong>——不进升级、不出心理归因；硬件在线接入、时钟同步与个体标定属后续项（见 <code>06_多信号源上传与硬件接入说明.md</code>）。</li></ul>
+<h2>附：来源清单</h2>
+<ul><li>招标原文：<code>中关村新域新质创新挑战赛需求汇编.pdf</code> 物理页 85—86；<code>独立软件开发需求清单-人员分配版本.docx</code> §28</li><li>内部既有成果：<code>竞品分析报告_多模态行为异常检测与心理分析.md</code>、<code>研发素材/03_算法选型与验证方案.md</code>、<code>研发素材/04_心理规则库规范与文献登记表.md</code>、<code>需求响应矩阵_7008111111.md</code></li><li>网络调研（节选）：pyannote.audio 2.1（Interspeech 2023, ISCA archive）、Whisper（arXiv:2212.04356）、Sentence-BERT（arXiv:1908.10084）、DePaulo 2003（Psychological Bulletin）、Baltrušaitis 2019（IEEE TPAMI）、Lian 2023（Entropy）、CASME II（PLoS ONE）、rPPG 综述（IEEE TBME）、CallMiner/Observe.AI/Dynamics 365 产品文档、云心测/检信/一心心智公开资料</li></ul></main></body></html>

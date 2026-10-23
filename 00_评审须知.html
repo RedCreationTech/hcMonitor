@@ -1,0 +1,66 @@
+<!doctype html><html lang=zh-CN><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>评审须知 · 「言心」MindDialogue 精简版</title><style>
+:root { --line:#dfe3ea; --ink:#1c2330; --muted:#63708a; --bg:#fff; --accent:#0b57d0; }
+* { box-sizing:border-box }
+body { margin:0; padding:40px 24px 80px; background:#f5f6f8; color:var(--ink);
+  font:15px/1.7 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+main { max-width:1360px; margin:0 auto; background:var(--bg); padding:44px 48px 64px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 14px rgba(20,30,50,.06); }
+h1 { font-size:27px; margin:0 0 18px; padding-bottom:14px; border-bottom:3px solid var(--ink); }
+h2 { font-size:20px; margin:38px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+h3 { font-size:17px; margin:26px 0 10px; color:#2b3548 }
+p { margin:10px 0 }
+code { font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace; background:#f0f2f6;
+  padding:1px 5px; border-radius:4px; color:#134272; word-break:break-all }
+ul { margin:10px 0; padding-left:22px }
+ol { margin:10px 0; padding-left:24px }
+pre { margin:14px 0 22px; padding:14px 16px; background:#f7f9fc; border:1px solid var(--line);
+  border-left:4px solid #b9c6de; border-radius:8px; overflow-x:auto }
+pre code { background:none; padding:0; color:#2b3548; font-size:12.5px; line-height:1.6;
+  white-space:pre; word-break:normal }
+li { margin:4px 0 }
+hr { border:0; border-top:1px solid var(--line); margin:30px 0 }
+.tablewrap { overflow-x:auto; margin:14px 0 22px; border:1px solid var(--line); border-radius:8px }
+table { border-collapse:collapse; width:100%; font-size:13.5px }
+th,td { border-bottom:1px solid var(--line); border-right:1px solid #eceff4;
+  padding:9px 11px; text-align:left; vertical-align:top }
+th { background:#eef2f8; font-weight:600; white-space:nowrap; position:sticky; top:0; z-index:2 }
+tr:last-child td { border-bottom:0 }
+tbody tr:nth-child(even) { background:#fbfcfe }
+a { color:var(--accent) }
+figure { margin:16px 0 26px; padding:10px; border:1px solid var(--line); border-radius:8px; background:#fbfcfe }
+figure img { display:block; width:100%; max-width:1280px; margin:0 auto; border:1px solid #cfd6e2; border-radius:5px; background:#fff }
+figcaption { margin-top:8px; font-size:12.5px; color:var(--muted); text-align:center }
+img { max-width:100% }
+@media print { body { background:#fff; padding:0 } main { border:0; box-shadow:none; padding:0 } }
+</style></head><body><main>
+<h1>评审须知 · 「言心」MindDialogue 精简版</h1>
+<p><b>需求</b>：基于对话内容的行为异常检测和心理变化分析技术（中关村新域新质创新挑战赛 · 需求编号 7008111111） <b>比选方式</b>：文字解决方案 + 产品实测 · <b>提交截止 2026-10-31</b> <b>包内版本</b>：P0 脚本回放原型 · 打包日 2026-10-22 <b>本包不含</b>：<code>prototype-lite/node_modules/</code>（216 MB）与 <code>dist/</code>（13 MB）——依赖与构建产物，拿到后 <code>npm install</code> 即可复原。</p>
+<hr>
+<h2>一、请按这个顺序读（约 40 分钟读完全部；只看结论读前两行）</h2>
+<div class="tablewrap"><table><thead><tr><th>序</th><th>文件</th><th>回答什么问题</th><th>用时</th></tr></thead><tbody><tr><td>1</td><td><code>01_精简版调研报告.md</code></td><td>招标原文到底要求了什么（28.01—28.08 <b>逐字摘录</b>）、同类产品长什么样、离线形态有没有学术依据</td><td>10min</td></tr><tr><td>2</td><td><code>02_精简版产品形态与功能划分.md</code></td><td>我们给什么、放弃什么、每个功能的服务端契约与验收断言；<b>§三 覆盖矩阵</b> 与 <b>§四 Q1—Q15 指标</b> 是核心</td><td>10min</td></tr><tr><td>3</td><td><code>04_技术出处目录.md</code></td><td>每一项指标/规则/阈值的出处分级：A 已核实 / B 待核定位 / C 自定义口径 / <b>D 演示占位</b></td><td>8min</td></tr><tr><td>4</td><td><code>06_多信号源上传与硬件接入说明.md</code></td><td>近红外、毫米波为什么"接入但结论封顶"，逐条失效原因与现场判据、后续硬件候选</td><td>7min</td></tr><tr><td>5</td><td><code>07_精简版验证操作手册.md</code></td><td><b>怎么一步步验</b>：13 个用例、32 张实拍截图、通过判据、28.01—28.08 与 Q1—Q15 核对表、如实披露清单</td><td>5min 浏览</td></tr><tr><td>—</td><td><code>03_精简版界面可视稿.html</code></td><td>十三屏实拍（前 5 屏音视频主链，后 8 屏多信号源链），截图在 <code>可视稿/</code></td><td>随手翻</td></tr><tr><td>—</td><td><code>05_行业速成手册.md</code></td><td>写给非本领域同事的入门与话术红线，<b>不必对外引用</b></td><td>选读</td></tr><tr><td>—</td><td><code>08_讲标一页纸.md</code></td><td>我方内部对齐材料，含"要拍的板"，<b>对外场合请勿分发</b></td><td>选读</td></tr></tbody></table></div>
+<p>原始依据在包内两份：<code>中关村新域新质创新挑战赛需求汇编.pdf</code>（正文页 80—81）、<code>独立软件开发需求清单-人员分配版本.docx</code>（§28）。</p>
+<h2>二、想动手验，三条命令</h2>
+<pre><code>cd prototype-lite
+npm install                # Apple Silicon 若报 rollup 缺模块：npm install --no-save @rollup/rollup-darwin-arm64
+npm run dev                # http://127.0.0.1:5185 · 口令 1234 · 分析师 W-02 / 复核人 R-01
+npm run verify             # 49 条需求覆盖断言（含 21 条多信号源），需 dev server 在跑</code></pre>
+<p>跑通后照 <code>07_精简版验证操作手册.md</code> 第一章准备素材、第三章逐个用例走。测试素材 13 份在 <code>prototype-lite/public/testkit/</code>（规格见同目录 README），音视频均已做 <code>+faststart</code>，浏览器本机可秒读时长。</p>
+<p><b>注意</b>：<code>npm run verify</code> 与验证手册用例共用同一个内存引擎，<b>不要并发跑</b>；<code>verify</code> 收尾会把引擎恢复出厂状态。</p>
+<h2>三、评审时请重点看这五件事（也是我方预判会被追问的地方）</h2>
+<ol><li><b>28.08 实测形态有变更，我方主动申报</b>：由"边采集边看"改为"现场上传贵方素材、离线出全套报告"。依据是招标原文只要求考察"行为异常检测能力"，未要求实时性（<code>01</code> §一逐字核验）。</li><li><b>本包所有截图与"实测值"来自真实链路</b>：由 <code>prototype-lite/scripts/testkit-shots.mjs</code> 在无头 Chrome 里真的拖素材、真的起批、真的走审批发布，逐屏实拍并打印服务端返回值。取证记录在 <code>验证手册截图/取证记录.md</code> 与 <code>验证手册截图/取证记录/&lt;用例&gt;.md</code>，注入脚本原文在 <code>验证手册截图/_shotlog/</code>。</li><li><b>但判定精度不可引用</b>：原型无真实推理，判定来自演示脚本（D 级演示占位）。画面里的置信度、影响值、事件号是<b>结构示例</b>，不是能力证明。真实推理在 P1（比选后 4 周）接入。</li><li><b>心理原因一律是模型推断，不是临床诊断</b>：每条结论强制带置信度 + 反事实陈述 + 免责声明，且分析师不能自批自己的报告（服务端校验）。</li><li><b>未经复算的单值不写入标书</b>：量化指标只允许【文献参考水平】或【实测现场标定】两类标签，Q1—Q6 属 P1/P2 现场标定项，本阶段只承诺口径与可复算路径。</li></ol>
+<h2>四、包内结构</h2>
+<pre><code>精简版/
+  00_评审须知.md / .html        ← 本文件
+  01—08_*.md / .html            七篇方案文档 + 一份内部对齐页
+  中关村…需求汇编.pdf            原始招标（复制件）
+  独立软件开发需求清单….docx      原始需求清单（复制件）
+  可视稿/                        03 的十三屏实拍原图
+  验证手册截图/                   07 的 32 张引用截图 + 53 张全量截图 + 取证记录 + 两份导出件
+  prototype-lite/                可运行原型（src / mock / scripts / public 素材 / 49 条断言）
+  tools/                         md→html 生成器与截图工装（精简版自带副本，不依赖外部目录）
+  README.md                      文件索引与重拍命令</code></pre>
+<h2>五、如实披露（完整清单见 <code>07_精简版验证操作手册.md</code> 第八章）</h2>
+<p>近红外/毫米波为<b>文件级导入</b>，无硬件在线接入、无采样级时钟同步、无个体基线标定，结论封顶在生理趋势层（自定义口径 C 级）；JSON 采样序列本版不支持；采样序列解析上限 4 MB；规则库 8 条候选规则与部分文献字段仍为占位，投标截止前替换或降级"待审"；影响值 [0,1] 为相对量，不可跨会话比较；精简版不含实时监看与跨终端协同。</p>
+<h2>六、两点提醒</h2>
+<ul><li>文件名含中文，Windows 请用 7-Zip / Bandizip / WinRAR 解压；若用系统自带解压出现文件名乱码，改上述工具即可，文件内容不受影响。</li><li>文档正文里的相对链接（如 <code>04_技术出处目录.md</code>）在解压后的本地目录中可直接跳转；<code>03</code>、<code>07</code>、<code>08</code> 的 HTML 版已把截图按相对路径内嵌，双击即可离线浏览。</li></ul>
+</main></body></html>

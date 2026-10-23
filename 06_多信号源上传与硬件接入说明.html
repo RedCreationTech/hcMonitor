@@ -1,0 +1,72 @@
+<!doctype html><html lang=zh-CN><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>06 · 多信号源上传与硬件接入说明</title><style>
+:root { --line:#dfe3ea; --ink:#1c2330; --muted:#63708a; --bg:#fff; --accent:#0b57d0; }
+* { box-sizing:border-box }
+body { margin:0; padding:40px 24px 80px; background:#f5f6f8; color:var(--ink);
+  font:15px/1.7 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+main { max-width:1360px; margin:0 auto; background:var(--bg); padding:44px 48px 64px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 14px rgba(20,30,50,.06); }
+h1 { font-size:27px; margin:0 0 18px; padding-bottom:14px; border-bottom:3px solid var(--ink); }
+h2 { font-size:20px; margin:38px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+h3 { font-size:17px; margin:26px 0 10px; color:#2b3548 }
+p { margin:10px 0 }
+code { font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace; background:#f0f2f6;
+  padding:1px 5px; border-radius:4px; color:#134272; word-break:break-all }
+ul { margin:10px 0; padding-left:22px }
+ol { margin:10px 0; padding-left:24px }
+pre { margin:14px 0 22px; padding:14px 16px; background:#f7f9fc; border:1px solid var(--line);
+  border-left:4px solid #b9c6de; border-radius:8px; overflow-x:auto }
+pre code { background:none; padding:0; color:#2b3548; font-size:12.5px; line-height:1.6;
+  white-space:pre; word-break:normal }
+li { margin:4px 0 }
+hr { border:0; border-top:1px solid var(--line); margin:30px 0 }
+.tablewrap { overflow-x:auto; margin:14px 0 22px; border:1px solid var(--line); border-radius:8px }
+table { border-collapse:collapse; width:100%; font-size:13.5px }
+th,td { border-bottom:1px solid var(--line); border-right:1px solid #eceff4;
+  padding:9px 11px; text-align:left; vertical-align:top }
+th { background:#eef2f8; font-weight:600; white-space:nowrap; position:sticky; top:0; z-index:2 }
+tr:last-child td { border-bottom:0 }
+tbody tr:nth-child(even) { background:#fbfcfe }
+a { color:var(--accent) }
+@media print { body { background:#fff; padding:0 } main { border:0; box-shadow:none; padding:0 } }
+</style></head><body><main>
+<h1>06 · 多信号源上传与硬件接入说明</h1>
+<p>需求编号 7008111111《基于对话内容的行为异常检测和心理变化分析技术》。 本篇回答三件事：<b>这一版能收哪几路信号、每一路的结论上限写在哪里、后续硬件还能接什么</b>。 对应实现：<code>prototype-lite/</code> 工作台离线链路，界面见 <code>03_精简版界面可视稿.html</code> 第 06—13 幅（实拍）。</p>
+<hr>
+<h2>一、口径先说清：这一版做到哪一步</h2>
+<p>招标 28.01 原文：<b>"不限于语音、视频、近红外、毫米波等单一或多种信号的输入"</b>。 "不限于"和"等"是开放表述，所以本条目要交的不是"接了四个传感器"，而是<b>一套能容纳多路异构信号、并且每一路都能说清自己贡献与上限的输入框架</b>。</p>
+<div class="tablewrap"><table><thead><tr><th>维度</th><th>本版（文件级多路登记）</th><th>本版不做（属后续硬件接入项）</th></tr></thead><tbody><tr><td>输入形态</td><td>上传素材文件：视频 / 音频 / 近红外采样序列 / 毫米波采样序列</td><td>硬件在线接入、驱动、采集盒常驻</td></tr><tr><td>必填性</td><td>音视频为主（任一即可起批）；扩展信号<b>多选、非必填</b></td><td>—</td></tr><tr><td>参与度</td><td><b>登记后每一份都进入批分析</b>，逐份切片、逐份列示，不因未勾选而被跳过</td><td>—</td></tr><tr><td>时基</td><td>按素材登记时长对齐到脚本时轴（分钟级）</td><td>采样级时钟同步（PTP/NTP）、跨设备触发对齐</td></tr><tr><td>标定</td><td>以素材静息段为中位数基线，出相对升幅</td><td>个体基线标定、跨会话个人基线库</td></tr><tr><td>结论</td><td>音视频走完整三级归因；近红外 / 毫米波<b>只到生理趋势层</b></td><td>扩展信号进入升级、进入心理归因</td></tr></tbody></table></div>
+<p>一句话：<b>把"多信号输入"从形容词变成动词——多路文件可登记、可分析、可出报告，同时每一路的结论上限在代码、界面、报告三处写死。</b></p>
+<hr>
+<h2>二、四类素材 × 六类异常：谁能提供哪一路</h2>
+<p>六类异常口径（28.07）：言语表达、语音特征、身体姿态、手部动作、面部表情、生理指标。 系统内部固定为六路模态键 <code>voice / semantic / face / pose / hand / physio</code>，<b>不因新增信号源而扩键</b>——近红外与毫米波都归 <code>physio</code>，但走独立的封顶链。</p>
+<div class="tablewrap"><table><thead><tr><th>素材类型</th><th>可解析模态</th><th>不可解析模态</th><th>是否进脚本判定链</th><th>结论上限</th><th>本版状态</th></tr></thead><tbody><tr><td>视频（主信号）</td><td>语音·语义·表情·姿态·手部·生理(rPPG) 六路</td><td>无</td><td>是</td><td>可出三级归因、可触发升级</td><td>已实现</td></tr><tr><td>音频（主信号）</td><td>语音·语义</td><td>表情·姿态·手部·生理</td><td>是</td><td>可出三级归因；缺的四路<b>不产出 0 值</b>，整条判定不产出该项</td><td>已实现</td></tr><tr><td>近红外（fNIRS 口径的采样序列，扩展）</td><td>生理</td><td>其余五路</td><td>否</td><td>只到生理趋势层：趋势 + 单模态异常，候选规则层恒为空，不进 ESCALATED</td><td>已实现（文件级）</td></tr><tr><td>毫米波雷达（扩展）</td><td>生理</td><td>其余五路</td><td>否</td><td>同上；质量降级时趋势仅供复核</td><td>已实现（文件级）</td></tr></tbody></table></div>
+<p>三条实现约束（评审时最容易被追问）：</p>
+<ol><li><b>可用性由素材类型决定，不由人勾选。</b> 界面上没有"要不要分析表情"的开关；只有素材。缺的那一路在结果页显示 <code>✕</code>，在报告里显示"不可用"，在 CSV 里不出行——避免"没测"被读成"正常"。</li><li><b>同一路信号可以有多个文件</b>（两台摄像机、前后两段采样），按 <code>文件名 + 类型</code> 去重登记；每条主信号异常标出<b>承载素材</b>清单，报告第四节逐条写明"·素材 A/B"。</li><li><b>融合发生在会话层，不发生在素材层。</b> 每份素材各跑自己的解析链（切片），最后在会话层用与实时监看同一套判定函数聚合，判定口径在报告首节写明 <code>E1 融合 + E2 判定（与实时监看同一函数）</code>。</li></ol>
+<hr>
+<h2>三、扩展信号为什么封顶：逐条独立失效原因</h2>
+<p>一个失效原因占一行，且给出<b>现场可执行判据</b>——不写"精度不足"这类无法核对的话。</p>
+<div class="tablewrap"><table><thead><tr><th>#</th><th>失效 / 限制原因</th><th>现场怎么判断这一路能不能采信</th><th>代码里的落点</th></tr></thead><tbody><tr><td>1</td><td>近红外测的是前额血氧相对变化，不是神经电活动，空间只能覆盖表层</td><td>是否采到静息段；探头—源距是否在 25—30mm 光程经验区间</td><td><code>cap_note</code> 逐条列出，报告附表 A「结论上限」列</td></tr><tr><td>2</td><td>头动伪迹与激活信号同为血氧浓度变化，置 0 会读成"无激活"，不置 0 会读成"有激活"</td><td>头动占比峰值是否 &lt; 20%（超判据即整片标"降级"）</td><td><code>quality='degraded'</code> + 解析步骤 #3</td></tr><tr><td>3</td><td>毫米波呼吸/心率是从体动杂波中反演的，对象靠近、说话、翻身都会退化</td><td>体动幅度峰值是否 &lt; 8mm</td><td>同上，<code>mmwave</code> 判据独立于 <code>nir</code></td></tr><tr><td>4</td><td>文件级导入没有共同时钟，跨信号对齐只能到分钟级</td><td>素材登记时长是否与元数据一致（不一致时结果页标"时基未读出"）</td><td><code>PhysioTrend.time_base</code> 显式声明取哪一时基</td></tr><tr><td>5</td><td>无个体基线标定，绝对值不可比</td><td>只看相对静息段（前 25% 采样窗）升幅，不看绝对浓度/绝对 bpm</td><td><code>baseline</code> 取静息段中位数</td></tr><tr><td>6</td><td>近红外与视频 rPPG 是<b>两个不同估计量</b>，数值接近不构成互相校验</td><td>演示脚本里两路共用一条唤醒度基线，所以曲线同形；真实设备上两路误差不相关</td><td>报告「精度受限」提示块逐字写明</td></tr></tbody></table></div>
+<p><b>自定义口径的诚实标注（出处目录 C 级）</b>：显著性判据为"峰值相对静息段中位数升幅 &gt; 12% 且末段 6/10 窗维持升幅 60% 以上"；<code>confidence</code> 在该层被重定义为<b>趋势显著性的折算值，不是归因置信度</b>。这两条是本方案自定，不引文献，报告与结果页同时写出，供评审直接否。</p>
+<hr>
+<h2>四、后续硬件接入的候选信号源（四组）</h2>
+<p>分组依据是<b>接入代价与口径影响</b>，不是设备热度。</p>
+<h3>A 组 · 只差驱动与时钟，解析链已在本版就位</h3>
+<div class="tablewrap"><table><thead><tr><th>信号源</th><th>归入哪一路</th><th>接入代价</th><th>主要失效原因</th></tr></thead><tbody><tr><td>近红外（HbO / HbR 采样序列）</td><td>physio（扩展链）</td><td>厂商 SDK → 采样序列落盘，接口不变（文件级本版已跑通）</td><td>头动、光程耦合不良</td></tr><tr><td>毫米波雷达（呼吸/心率）</td><td>physio（扩展链）</td><td>同上</td><td>体动杂波、多目标串扰</td></tr><tr><td>USB 麦克风阵列</td><td>voice</td><td>需通道选择与增益标定</td><td>远场混响压低 jitter 估计质量</td></tr><tr><td>网络摄像机 RTSP</td><td>face / pose / hand</td><td>需拉流与抽帧节流</td><td>压缩伪迹、帧率抖动破坏 AU 时序</td></tr></tbody></table></div>
+<p>&gt; <b>本版口径（一句话）</b>：我们<b>支持近红外 / 毫米波这类采样序列文件的导入与分析</b>——文件能登记、能切片、能进报告，本版已按此实现；结论封顶在生理趋势层。 &gt; 硬件直采走哪条技术路线（反射式成像还是采集盒）是硬件方案的事，不在本版承诺范围内；本版只做到"收到文件就能算、算到哪一步写清楚"，接口对后续硬件保持不变。 &gt; 对需求方就一句：「这一版把'能收哪些文件、收到后怎么算、算到哪为止'做实了，硬件接入是下一步。」</p>
+<h3>B 组 · 需新增一路模态定义，会撑破"六类"口径 → 先与需求方确认再接</h3>
+<div class="tablewrap"><table><thead><tr><th>信号源</th><th>归入哪一路</th><th>为什么先确认</th></tr></thead><tbody><tr><td>皮电 EDA</td><td>physio</td><td>唤醒度可用，但受温度/湿度/电极凝胶影响，且招标六类里没有独立条目</td></tr><tr><td>皮肤温度</td><td>physio</td><td>变化周期以分钟计，与对话窗口不同尺度</td></tr><tr><td>单导联心电 ECG</td><td>physio</td><td>与 HRV 同源但需贴附，谈话场景接受度需评估</td></tr><tr><td>呼吸带 / 胸腹带</td><td>physio</td><td>与毫米波呼吸通道重复，重复即冲突源</td></tr></tbody></table></div>
+<h3>C 组 · 不建议接入（关联弱或合规风险高）</h3>
+<div class="tablewrap"><table><thead><tr><th>信号源</th><th>不接的理由</th></tr></thead><tbody><tr><td>脑电 EEG</td><td>需医疗/科研资质与专业贴附，伪迹主导，与"对话内容行为异常"的因果链过长</td></tr><tr><td>桌面式眼动仪</td><td>部署形态冲突（要求头部约束），外勤与谈话室均不适配</td></tr><tr><td>消费级"情绪指数"手环</td><td>厂商黑箱指数无法拆到观察层，违背可解释归因主线</td></tr><tr><td>任何以"测谎"为卖点的传感器</td><td>线索效应量级不支持结论性判定，且与本系统"输出风险提示、非临床诊断"的免责口径直接冲突</td></tr></tbody></table></div>
+<h3>D 组 · 接入形态（工程侧）</h3>
+<p><code>传感器 / 采集盒 →（USB·串口）边缘网关 →（PTP/NTP 统一时基）→ 采样序列落盘为文件 → 本版同一条登记链</code>。 关键点：<b>硬件接入不改判定接口，只改时基与标定</b>。本版按文件级导入实现的切片、封顶、报告列示，在硬件接入后仍然成立；届时新增的是"在线通道"与"时钟源"两件事，扩展信号的结论上限（只到趋势层）是否放开，取决于个体标定是否落地，而不是取决于设备是否在线。</p>
+<hr>
+<h2>五、界面动线（对应实拍 06—13）</h2>
+<div class="tablewrap"><table><thead><tr><th>步</th><th>画面</th><th>关键交互</th><th>截图</th></tr></thead><tbody><tr><td>1</td><td>任务台 · 会话列表</td><td>导入行显示「离线导入 · N 份」+ 全部文件名 + <code>含扩展信号</code> 标签；行内进度标签</td><td><code>06_任务台_多源素材登记.png</code></td></tr><tr><td>2</td><td>新建会话 · 素材登记</td><td>四个登记框分主信号 / 扩展信号，扩展框标"可选"；本机读元数据（时长 / 行数 / 时基），不上传内容；已登记列表可逐份移除并显示主/扩展计数</td><td><code>07_新建会话_四路素材上传.png</code></td></tr><tr><td>3</td><td>分析过程 · 逐素材推进</td><td>20 段进度按素材分组，<code>✓/▶/·</code> 三态；当前段显示正在解析的素材与步骤</td><td><code>08_分析过程_逐素材切片进度.png</code></td></tr><tr><td>4</td><td>结果 · 汇总</td><td>概览卡含「登记素材 4 / 全部参与」「其中扩展信号 2」；提示块逐份列出素材与角色</td><td><code>09_分析结果_汇总与模态可用性.png</code></td></tr><tr><td>5</td><td>结果 · 切片卡</td><td>每份素材一张卡：可解析/不可解析模态、解析切片、生理趋势表（基线→峰值→末段值 + 轨迹）、本路为什么只到趋势层</td><td><code>10_分析结果_素材切片与趋势.png</code></td></tr><tr><td>6</td><td>结果 · 异常表</td><td>新增「素材」列；扩展信号条目在心理原因结论列显示 <code>只到趋势层 · 不出归因</code></td><td><code>11_分析结果_六类信号与异常表.png</code></td></tr><tr><td>7</td><td>报告 · 起草与审批</td><td>「精度受限」块自动列出扩展素材份数与降级原因；章节二逐份列示贡献</td><td><code>12_分析报告_草稿与审批流.png</code></td></tr><tr><td>8</td><td>报告 · 下载 / 打印</td><td>导出 HTML 含<b>附表 A · 素材切片一览</b>（素材文件 / 信号源 / 角色 / 可解析模态 / 不可用模态 / 支撑事件数 / 质量 / 结论上限）与附表 B 审批流水</td><td><code>13_报告导出_附表A素材切片.png</code></td></tr></tbody></table></div>
+<hr>
+<h2>六、机器可核断言（<code>npm run verify</code> F / F2 段，共 21 条）</h2>
+<p>演示脚本：<code>node scripts/demo-multisource.mjs</code>（用 <code>public/demo/</code> 下四路真实素材登记并起批，打印会话号与结果页地址）。</p>
+<div class="tablewrap"><table><thead><tr><th>断言</th><th>断的是什么</th></tr></thead><tbody><tr><td>四份素材各产出一片切片</td><td>"上传后所有文件都参与分析"不是话术，切片数 == 登记数</td></tr><tr><td>每片可用 + 不可用模态恒为 6</td><td>缺的路不产出 0 值</td></tr><tr><td>音频素材独立承载事件</td><td>不只视频在出结果</td></tr><tr><td>扩展信号事件候选规则层恒为空、最高 ALERT</td><td>封顶在数据层成立，不只在 UI</td></tr><tr><td>主信号四模态同窗仍可升级</td><td>封顶只作用于扩展信号，没有误伤主链</td></tr><tr><td>每条主信号事件标出承载素材</td><td>多文件可追溯</td></tr><tr><td>报告章节含「二、素材切片与各自贡献」且逐份列文件名</td><td>报告与切片一致</td></tr><tr><td>CSV 含 <code>asset</code> 列、扩展行标 <code>trend_only（不出归因）</code></td><td>导出件保留上限口径</td></tr><tr><td>导出 HTML 含「附表 A」与「离线导入 · 非实时」</td><td>下载/打印件同样保留</td></tr><tr><td>仅扩展信号时判定链逐条裁撤并给原因、可用模态为空</td><td>没有音视频输入时不冒充"检测正常"</td></tr><tr><td>未登记素材起批 422</td><td>没有输入就不出结果</td></tr></tbody></table></div>
+<hr>
+<h2>七、如实披露（本版本未实现项）</h2>
+<ul><li>判定为演示脚本回放，未接入真实 ASR / 视觉 / rPPG / 传感器推理；扩展信号趋势曲线由脚本唤醒度基线派生，<b>不构成跨信号校验证据</b>。</li><li>采样序列文件按"读首列推时基、行数即样本数"登记，未做列名语义解析与单位换算；正式实现需补列映射配置与厂商模板。</li><li>近红外 / 毫米波为文件级导入，非硬件在线接入；无时钟同步、无个体标定。</li><li>导出件为明文 HTML，SM4 封装未实现（沿用完整版同一披露口径）。</li></ul>
+</main></body></html>

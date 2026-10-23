@@ -1,0 +1,63 @@
+<!doctype html><html lang=zh-CN><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>精简版产品形态与功能划分 · 含招标指标拆解</title><style>
+:root { --line:#dfe3ea; --ink:#1c2330; --muted:#63708a; --bg:#fff; --accent:#0b57d0; }
+* { box-sizing:border-box }
+body { margin:0; padding:40px 24px 80px; background:#f5f6f8; color:var(--ink);
+  font:15px/1.7 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+main { max-width:1360px; margin:0 auto; background:var(--bg); padding:44px 48px 64px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 14px rgba(20,30,50,.06); }
+h1 { font-size:27px; margin:0 0 18px; padding-bottom:14px; border-bottom:3px solid var(--ink); }
+h2 { font-size:20px; margin:38px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+h3 { font-size:17px; margin:26px 0 10px; color:#2b3548 }
+p { margin:10px 0 }
+code { font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace; background:#f0f2f6;
+  padding:1px 5px; border-radius:4px; color:#134272; word-break:break-all }
+ul { margin:10px 0; padding-left:22px }
+ol { margin:10px 0; padding-left:24px }
+pre { margin:14px 0 22px; padding:14px 16px; background:#f7f9fc; border:1px solid var(--line);
+  border-left:4px solid #b9c6de; border-radius:8px; overflow-x:auto }
+pre code { background:none; padding:0; color:#2b3548; font-size:12.5px; line-height:1.6;
+  white-space:pre; word-break:normal }
+li { margin:4px 0 }
+hr { border:0; border-top:1px solid var(--line); margin:30px 0 }
+.tablewrap { overflow-x:auto; margin:14px 0 22px; border:1px solid var(--line); border-radius:8px }
+table { border-collapse:collapse; width:100%; font-size:13.5px }
+th,td { border-bottom:1px solid var(--line); border-right:1px solid #eceff4;
+  padding:9px 11px; text-align:left; vertical-align:top }
+th { background:#eef2f8; font-weight:600; white-space:nowrap; position:sticky; top:0; z-index:2 }
+tr:last-child td { border-bottom:0 }
+tbody tr:nth-child(even) { background:#fbfcfe }
+a { color:var(--accent) }
+@media print { body { background:#fff; padding:0 } main { border:0; box-shadow:none; padding:0 } }
+</style></head><body><main>
+<h1>精简版产品形态与功能划分 · 含招标指标拆解</h1>
+<p><b>产品一句话</b>：上传一段谈话录音/录像（可另附近红外、毫米波等扩展信号文件），几分钟后得到"六类异常 + 三级心理归因 + 可审批发布的分析报告"的<b>离线高精度分析工作台</b>。 <b>工程载体</b>：<code>prototype-lite/</code>（Vite + React 18 + TS strict + Ant Design 5；<code>npm run dev</code> → http://127.0.0.1:5185；<code>npm run verify</code> 49 条断言全通过；构建通过） <b>上游依据</b>：<code>01_精简版调研报告.md</code>（原文核验与学术依据）、完整版 <code>需求响应矩阵_7008111111.md</code></p>
+<hr>
+<h2>一、形态边界：保留什么、放弃什么</h2>
+<div class="tablewrap"><table><thead><tr><th>边界</th><th>内容</th><th>与招标条目的关系</th></tr></thead><tbody><tr><td><b>保留</b></td><td>席位登录（分析师/复核人）、多路素材导入登记（视频/音频/近红外/毫米波）、离线批分析（逐素材分片进度 + 会话层融合）、六类异常结果 + 三级归因、跨模态因果链、报告起草/审批/发布、审计留痕、CSV/HTML 导出与打印</td><td>28.01—28.07 的承载主体全部保留</td></tr><tr><td><b>放弃</b></td><td>实时监看（LiveConsole）、现场采集端（平板/外勤手机）、呼叫处置队列、值守大屏、分析师手机、后台配置终端、终端协同台、标注复核页</td><td>均为完整版<b>自行加码</b>的协同/实时能力，<b>无一来自招标原文</b></td></tr><tr><td><b>接入但封顶</b></td><td>近红外（fNIRS）、毫米波两类扩展生理信号，<b>按采样序列文件级导入</b>参与登记、切片与报告；结论只到生理趋势层，不进升级、不出心理归因</td><td>28.01 "不限于……单一或多种信号的输入"的开放面；封顶理由与逐条失效判据见 <code>06_多信号源上传与硬件接入说明.md</code> §三</td></tr><tr><td><b>不做</b></td><td>上述扩展信号的<b>硬件在线接入</b>、驱动、采样级时钟同步与个体基线标定</td><td>属后续硬件接入项；接入形态与候选信号源见 <code>06_多信号源上传与硬件接入说明.md</code> §四</td></tr><tr><td><b>不承诺</b></td><td>&lt;2s/&lt;3s 端到端时延、毫秒级告警、硬件形态</td><td>随实时能力一并放弃；离线口径改为"分析时长"指标（见第四节）</td></tr></tbody></table></div>
+<p><b>为什么这样切</b>：① 28.08 实测考察的是"行为异常检测能力"，不是实时性；② 调研证明"上传→分析→报告"是已被市场验证的最小闭环（Dynamics 365、CallMiner、云心测、一心心智同构）；③ 离线形态在 ASR/diarization/时序窗三个环节有可引文献的精度优势（调研报告 §3.2）。</p>
+<h2>二、功能划分：四个模块、一条主链路</h2>
+<pre><code>M1 素材上传与会话        →  M2 分析过程            →  M3 分析结果            →  M4 分析报告
+四类素材分框登记          逐素材解析链分片推进        每份一张切片卡              自动起草（含「精度受限」块）
+（音视频为主 + 近红外/     末段会话层融合与判定        六类异常 + 影响值           提交 → 审批/驳回 → 发布
+  毫米波可选）             进度按素材逐段广播          扩展信号只到生理趋势层      导出 HTML（附表 A）/ CSV
+本机读元数据登记 →
+建会话（授权文书号卡口）</code></pre>
+<h3>M1 素材上传与会话（任务台）</h3>
+<ul><li><b>画面</b>：会话列表 + 统计卡（离线分析中 / 分析完成 / 待审批报告）+「新建会话」导入表单（四个登记框：主信号 视频/音频 + 扩展信号 近红外/毫米波，扩展框标"可选"）。</li><li><b>功能点</b>：按信号源分框选择文件（音视频读容器元数据取时长，采样序列读首列推时基与行数；本机登记，不上传内容）；<b>音视频为主、扩展信号多选非必填</b>，但登记后每一份都进入批分析；授权文书号必填（服务端 403 <code>CONSENT_REQUIRED</code> 卡口，R1）；导入会话与历史会话分源展示（来源列：离线导入 · N 份 + 逐份文件名 + <code>含扩展信号</code> 标签，后者为只读历史）；同一路信号允许多个文件，按 <code>文件名+类型</code> 去重。</li><li><b>服务端契约</b>：<code>POST /v1/sessions</code>（<code>source:'imported'</code> + <code>assets[{name,size_bytes,duration_seconds,kind:video|audio|nir|mmwave}]</code>）；<code>GET /v1/sessions</code>。</li><li><b>实现锚点</b>：<code>prototype-lite/src/terminals/workstation/SessionsPage.tsx</code>（<code>AssetUpload</code> / <code>probeDuration</code> / <code>probeSeries</code>）</li><li><b>验收</b>：缺文书号建会话被 403 拒绝；未登记任何素材时起批 422；音频素材会话的视觉/生理模态标"不可用"而非 0 值；四路素材会话的已登记列表显示主/扩展计数与每份时长。</li></ul>
+<h3>M2 分析过程（离线批分析）</h3>
+<ul><li><b>画面</b>：任务台行内进度标签（<code>64% · 〔nir_hbo_152s.csv〕运动伪迹剔</code>），结果页顶部为<b>逐素材分片进度清单</b>（<code>✓/▶/·</code> 三态，每段步骤名带文件名），完成后变为「查看结果」。</li><li><b>管线</b>：主信号每份素材 5—6 段（分帧解包 → 语音特征 eGeMAPS → 语义话题/影响值 → 视觉 AU/姿态/手部 → 生理 rPPG），扩展信号每份 4 段（读序列 → 通道配对与光程归一 → 运动伪迹剔除 → 基线校正与切片），最后 1 段为<b>会话层融合 + 判定</b>；进度经 WS 广播（<code>/v1/analysis/stream?channel=workstation</code>）。</li><li><b>功能点</b>：归档只读会话不可发起（409）；<b>批分析进行中重复起批被 409 <code>ANALYZING</code> 拦下</b>（不并发生成第二份报告）；产物只落在本会话，报告口径强制"离线导入 · 非实时"；判定链只在最宽的主素材上跑一次，会话不因多份音视频素材而把同一段对话算两遍。</li><li><b>服务端契约</b>：<code>POST /v1/sessions/:id/analyze-offline</code>（返回 <code>stages/assets/slices/report_id</code>）；WS 事件 <code>offline_progress / anomaly / impact / dialogue</code>。</li><li><b>实现锚点</b>：<code>prototype-lite/mock/engine.ts</code>（<code>analyzeOffline()</code> / <code>runOfflinePass()</code> / <code>offlineStages()</code>）、<code>OfflineResultPage.tsx</code></li><li><b>验收</b>：四路素材会话返回 20 段进度、4 片切片；可用性与素材类型一致（视频 6/6，音频 2/6，扩展信号 1/6 且仅趋势层）；全程无假 0 值。</li></ul>
+<h3>M3 分析结果（异常 + 归因）</h3>
+<ul><li><b>画面</b>：结果概览卡（登记素材 N / 全部参与、上报异常、其中扩展信号、覆盖模态类数、裁撤条目、话题边界、峰值灯）、<b>素材切片卡区</b>、六类信号可用性行（✓ / ✕ / 仅趋势三态）、异常事件表（含「素材」列）、话题切分与语义影响值区、归因抽屉、跨模态因果链抽屉。</li><li><b>功能点</b>：<ul><li><b>每份素材一张切片卡</b>：角色（进全链判定 / 只到生理趋势层）、大小与时基、解析切片清单、该素材可解析/不可解析模态、支撑事件跳转、质量与降级原因；扩展信号另附<b>生理趋势表</b>（基线→峰值→峰值时刻→末段值 + 轨迹）与"本路为什么只到趋势层"逐条列示；</li><li>六类异常逐类可命中（28.04/28.07）：语音特征、言语表达、面部表情、身体姿态、手部动作、生理指标（rPPG-HRV）；</li><li>分角色识别：逐句 <code>diar_confidence</code> 三态（ok/degraded/off）+ &lt;0.80 告警（28.02）；</li><li>话题提取：边界判定依据（句嵌入余弦跳变 + 实体集切换双判据）随话题下发（28.02）；</li><li>影响值：四维 <code>0.2情绪冲击+0.3认知冲突+0.3利益相关+0.2持续影响</code>，必带 <code>rationale_text</code>，[0,1] 相对量不可跨会话比较（28.02）；</li><li>三级归因：L1 观察层（物理量+单位+时间窗）→ L2 候选规则（权重+文献+命中态）→ L3 结论（置信度+<b>反事实</b>+<b>"模型推断非临床诊断"免责</b>）（28.01/28.03/28.04）；</li><li><b>扩展信号封顶</b>：候选规则层恒为空、严重度上限 ALERT（不触发 ESCALATED）、结论层写"不做心理归因"、<code>confidence</code> 重定义为趋势显著性折算值，并在同屏给出该路的现场判据（头动占比 / 体动幅度）；</li><li>单模态输入自动裁剪模态集并显性标注缺失（28.05/28.06）；仅扩展信号时脚本判定链整体裁撤并逐条给原因，不以"检测正常"形式出现；</li><li>CSV 导出结果台账（含 <code>asset</code> 列、<code>trend_only（不出归因）</code> 标记与全部被裁撤条目）。</li></ul></li><li><b>实现锚点</b>：<code>OfflineResultPage.tsx</code>（<code>SliceCard</code> / <code>Spark</code>）、<code>src/components/attribution.tsx</code>、<code>mock/script.ts</code>（19 轮对话时间轴 + 7 条异常含 ESCALATED + <code>EXT_SIGNALS</code> 两路扩展信号定义）</li><li><b>验收</b>：<code>npm run verify</code> A/C/D 组断言（六类全覆盖、生理异常触发、分离三态、规则热更新影响结论）+ F/F2 组 21 条（切片数==登记数、扩展事件不出归因不升级、承载素材可追溯、仅扩展信号时判定链裁撤）。</li></ul>
+<h3>M4 分析报告</h3>
+<ul><li><b>画面</b>：报告列表 + 状态机步骤条（起草 → 待审批 → 通过/驳回 → 已发布）+ 审批意见 + 导出（HTML 件 / 打印存 PDF）+ <b>「精度受限」提示块</b>。</li><li><b>功能点</b>：批分析完成后自动起草报告，六章结构（素材与分析概况 / <b>素材切片与各自贡献</b> / 异常行为事件 / 可解释归因与心理原因 / 话题切分与语义影响值 / 局限与免责）；「精度受限」块由素材构成自动生成——列出扩展信号份数、封顶口径、与视频 rPPG 不可互为校验的原因、被降级素材及其触发判据；分析师起草不能自批（角色互斥，服务端校验）；驳回必填理由；缺「局限与免责」章节提交被 422 拦下；发布导出留痕入审计链，导出件含<b>附表 A · 素材切片一览</b>与附表 B 审批流水，未发布件带水印。</li><li><b>服务端契约</b>：<code>POST /v1/reports</code>、<code>/reports/:id/submit|approve|reject|publish|export</code>；审计 <code>seq/prev_hash/sha256</code> 链。</li><li><b>实现锚点</b>：<code>ReportsPage.tsx</code>、<code>mock/engine.ts</code>（<code>draftOfflineReport()</code> / <code>reportHtml()</code>）</li><li><b>验收</b>：verify E 组断言（导出 BOM、哈希链复算、越权 403）+ F 组（报告含章节二且逐份列文件名、导出 HTML 含附表 A 与"离线导入 · 非实时"）。</li></ul>
+<h2>三、招标条目 → 精简版功能 → 落地状态</h2>
+<div class="tablewrap"><table><thead><tr><th>条目</th><th>要点</th><th>精简版功能点</th><th>状态</th></tr></thead><tbody><tr><td>28.01</td><td>对话为驱动、不限信号输入、捕捉异常、分析心理原因</td><td>M1 四类素材多路登记（音视频为主 + 近红外/毫米波扩展）+ M3 六类异常与三级归因</td><td>✅ 离线实例化；扩展信号按文件级导入且结论封顶</td></tr><tr><td>28.02</td><td>分角色识别、话题提取、语义影响值</td><td>M3 三项全保留（置信度/边界依据/四维影响值）</td><td>✅</td></tr><tr><td>28.03</td><td>语音输入→语音/言语异常→心理原因</td><td>M2 语音阶段 + M3 voice/semantic 异常</td><td>✅</td></tr><tr><td>28.04</td><td>六类异常 + 心理原因（推断性质）</td><td>M3 异常表 6/6 可命中 + 反事实/免责常驻</td><td>✅</td></tr><tr><td>28.05</td><td>输入：语音 / 语音+视频 / 多模态</td><td>M1 支持纯音频（2/6）、视频（6/6）、音视频+扩展信号（6/6 + 趋势层）三种上传组合</td><td>✅ 多路文件级</td></tr><tr><td>28.06</td><td>方法：单模态或多模态</td><td>模态集由素材类型自动决定 + 逐素材切片 + 缺失显性标注 + 会话层同窗聚合升级</td><td>✅</td></tr><tr><td>28.07</td><td>六类异常清单 + 心理原因分析</td><td>同 28.04；规则库热更新即时影响结论</td><td>✅</td></tr><tr><td>28.08</td><td>实测考察异常检测能力</td><td><b>改为现场上传素材离线实测</b>（约 3 分钟动线，多路素材一次起批，见 prototype-lite/README）</td><td>🟡 形态改变，需主动申报口径</td></tr><tr><td>（近红外/毫米波）</td><td>28.01 开放面</td><td><b>文件级导入已实现</b>：登记、切片、趋势、报告逐份列示；结论只到生理趋势层</td><td>✅ 文件级 / 🔵 硬件在线接入待后续</td></tr></tbody></table></div>
+<h2>四、量化指标拆解（精简版承诺集）</h2>
+<p>原文无门槛，主动定义口径；<b>未经复算的单值不写入标书</b>，每项只允许【文献参考水平】或【实测现场标定】两类标签。</p>
+<div class="tablewrap"><table><thead><tr><th>#</th><th>指标</th><th>定义/公式</th><th>目标口径</th><th>标签</th></tr></thead><tbody><tr><td>Q1</td><td>语音识别质量</td><td>WER（整段离线解码）</td><td>参照 Whisper 基准；现场用招标素材标定</td><td>文献参考</td></tr><tr><td>Q2</td><td>分角色识别</td><td>DER（pyannote 离线管线）</td><td>AISHELL-4 12.2% / AMI 18.8% 为参照水平</td><td>文献参考</td></tr><tr><td>Q3</td><td>话题边界</td><td>P/R/F1（边界 ±2 句容差）</td><td>双判据（嵌入跳变+实体切换）现场标定</td><td>实测标定</td></tr><tr><td>Q4</td><td>异常检出率</td><td>命中异常数 / 人工标注异常数（分模态）</td><td>自建 ≥50 段标注集后给出</td><td>实测标定</td></tr><tr><td>Q5</td><td>误报率</td><td>复核判"误报"的告警占比</td><td>与标注复核闭环挂钩（完整版回流机制，精简版报告备注承接）</td><td>实测标定</td></tr><tr><td>Q6</td><td>标注一致率</td><td>Cohen's Kappa（双人标注）</td><td>≥0.6 为可用线</td><td>实测标定</td></tr><tr><td>Q7</td><td>归因可采纳率</td><td>复核人"认可归因"/已审归因数</td><td>报告审批流天然产生该数据</td><td>实测标定</td></tr><tr><td>Q8</td><td>六类异常覆盖</td><td>演示素材中六类各 ≥1 条命中</td><td>当前脚本 7/7 命中（含 ESCALATED）</td><td>原型已验</td></tr><tr><td>Q9</td><td>单素材分析时长</td><td>提交→结果就绪，156s 视频样例</td><td>原型演示 &lt;3min；正式实现按 1× 视频时长 CPU 预算标定</td><td>实测标定</td></tr><tr><td>Q10</td><td>报告生成时长</td><td>分析完成→草稿就绪</td><td>自动起草即时；审批时长归流程</td><td>原型已验</td></tr><tr><td>Q11</td><td>可追溯率</td><td>有观察层证据+文献字段的告警占比</td><td>台账断言 100%（未登记规则显性标出）</td><td>原型已验</td></tr><tr><td>Q12</td><td>审计完整率</td><td>检测事件在哈希链上的落点缺失数</td><td>断言缺失=0</td><td>原型已验</td></tr><tr><td>Q13</td><td>素材级参与率</td><td>产出切片的素材数 / 登记素材数（多路输入下不许有文件被静默跳过）</td><td>断言恒为 100%（4/4）</td><td>原型已验</td></tr><tr><td>Q14</td><td>素材级可追溯率</td><td>标出承载素材清单的主信号告警占比</td><td>断言 100%；扩展信号另按素材单列</td><td>原型已验</td></tr><tr><td>Q15</td><td>扩展信号封顶一致率</td><td>扩展信号事件中候选规则层为空、且未出现 ESCALATED 的占比</td><td>断言 100%（代码/UI/报告/CSV 四处同口径）</td><td>原型已验</td></tr></tbody></table></div>
+<p><b>明确不再承诺</b>：端到端告警时延、并发路数、值守态势刷新率（随实时/协同能力一并放弃，若需求方后续要求可在完整版路线上恢复）。</p>
+<h2>五、实施路线（精简版三步走）</h2>
+<div class="tablewrap"><table><thead><tr><th>阶段</th><th>内容</th><th>判据</th></tr></thead><tbody><tr><td>P0（当前）</td><td>脚本回放原型：四模块全链路可演示、49 条断言通过（含 21 条多信号源断言）</td><td><code>npm run dev &amp;&amp; npm run verify</code></td></tr><tr><td>P1（比选后 4 周）</td><td>最小真实推理：openSMILE eGeMAPS + Whisper/FunASR + pyannote 对真实素材跑通语音/语义两路，规则引擎复用；扩展信号侧先做<b>采样序列解析器</b>（列名/单位映射、时基对齐、伪迹剔除）</td><td>Q1/Q2 现场可复算；Q13—Q15 换真实素材后仍成立</td></tr><tr><td>P2（比选后 12 周）</td><td>视觉三路（AU/姿态/手部）+ rPPG 生理路接入；标注回流与 Kappa 评测集建设；扩展信号硬件接入（驱动 + PTP/NTP 统一时基 + 个体基线标定）——标定落地后再评审是否放开趋势层封顶</td><td>Q4—Q6 出实测值</td></tr></tbody></table></div>
+<h2>六、已知限制（如实申报）</h2>
+<ol><li>原型无真实推理，结果来自演示脚本（19 轮对话、合成素材 <code>public/assets/demo-talk.mp4</code>；多信号源演示用 <code>public/demo/</code> 下四路真实格式素材）；</li><li>规则库 8 条脚本候选规则 + R-PSY-22 文献为占位，投标截止前替换为调研报告 §3.1 真实文献或标"待审"；</li><li>近红外/毫米波为<b>文件级导入</b>：无硬件在线接入、无采样级时钟同步、无个体基线标定，结论封顶在生理趋势层（口径见 <code>06_多信号源上传与硬件接入说明.md</code> §三）；扩展信号显著性判据（升幅 &gt;12% 且末段 6/10 窗维持 60%）与 <code>confidence</code> 重定义属<b>自定义口径</b>，出处目录标 C 级，不引文献；脑电/皮电/眼动等不采用（理由见该篇 §四 C 组）；</li><li>影响值 [0,1] 为相对量，不可跨会话比较；</li><li>精简版不含实时监看与跨终端协同——若需求方实测环节明确要求"边采集边看"，回到完整版六终端路线演示（两版同源，数据契约一致）。</li></ol>
+</main></body></html>

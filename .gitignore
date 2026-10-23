@@ -1,0 +1,9 @@
+# 依赖与构建产物
+node_modules/
+dist/
+.vite/
+
+# 系统与编辑器杂项
+.DS_Store
+*.log
+*.local

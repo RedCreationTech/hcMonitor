@@ -1,0 +1,52 @@
+<!doctype html><html lang=zh-CN><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>行业速成手册 · 30 分钟看懂项目并显得专业</title><style>
+:root { --line:#dfe3ea; --ink:#1c2330; --muted:#63708a; --bg:#fff; --accent:#0b57d0; }
+* { box-sizing:border-box }
+body { margin:0; padding:40px 24px 80px; background:#f5f6f8; color:var(--ink);
+  font:15px/1.7 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+main { max-width:1360px; margin:0 auto; background:var(--bg); padding:44px 48px 64px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 14px rgba(20,30,50,.06); }
+h1 { font-size:27px; margin:0 0 18px; padding-bottom:14px; border-bottom:3px solid var(--ink); }
+h2 { font-size:20px; margin:38px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+h3 { font-size:17px; margin:26px 0 10px; color:#2b3548 }
+p { margin:10px 0 }
+code { font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace; background:#f0f2f6;
+  padding:1px 5px; border-radius:4px; color:#134272; word-break:break-all }
+ul { margin:10px 0; padding-left:22px }
+ol { margin:10px 0; padding-left:24px }
+pre { margin:14px 0 22px; padding:14px 16px; background:#f7f9fc; border:1px solid var(--line);
+  border-left:4px solid #b9c6de; border-radius:8px; overflow-x:auto }
+pre code { background:none; padding:0; color:#2b3548; font-size:12.5px; line-height:1.6;
+  white-space:pre; word-break:normal }
+li { margin:4px 0 }
+hr { border:0; border-top:1px solid var(--line); margin:30px 0 }
+.tablewrap { overflow-x:auto; margin:14px 0 22px; border:1px solid var(--line); border-radius:8px }
+table { border-collapse:collapse; width:100%; font-size:13.5px }
+th,td { border-bottom:1px solid var(--line); border-right:1px solid #eceff4;
+  padding:9px 11px; text-align:left; vertical-align:top }
+th { background:#eef2f8; font-weight:600; white-space:nowrap; position:sticky; top:0; z-index:2 }
+tr:last-child td { border-bottom:0 }
+tbody tr:nth-child(even) { background:#fbfcfe }
+a { color:var(--accent) }
+@media print { body { background:#fff; padding:0 } main { border:0; box-shadow:none; padding:0 } }
+</style></head><body><main>
+<h1>行业速成手册 · 30 分钟看懂项目并显得专业</h1>
+<p><b>读者</b>：不熟悉多模态情感计算/行为分析行业的方案与投标同事。 <b>配套</b>：数字出处一律以 <code>04_技术出处目录.md</code> 为准——本手册教你"怎么理解、怎么说"，04 教你"能不能说"。</p>
+<hr>
+<h2>一、三句话讲清这个项目（电梯陈述）</h2>
+<p>&gt; 1. 招标方要的是：<b>听一段谈话，看出对方哪里异常、背后是什么心理状态</b>——而且异常不能是黑盒猜的，要能一层层讲出证据。 &gt; 2. 我们做的是：<b>把一段录音/录像放进工作台，几分钟后得到"六类异常 + 三级归因证据链 + 可审批的分析报告"</b>。 &gt; 3. 我们赢在：同类产品（连信 TrueSight、云心测这些）只给"情绪分数"，<b>没人把"观察→规则+文献→结论（含反事实）"的证据链做成产品</b>——这正是招标 28.01"分析行为异常背后的心理原因"的字面要求。</p>
+<h2>二、一条主线（所有画面都挂在这条线上）</h2>
+<pre><code>上传音视频 → 机器逐帧分析（语音/画面/语义三路）→ 发现异常事件
+→ 每个异常套"规则库"给出心理假设 → 生成报告 → 人审批后才算数</code></pre>
+<p>记住最后一句：<b>机器只提假设，人来下结论</b>。这是整个产品的合规底线，也是被问倒时的万能退路。</p>
+<h2>三、17 个术语的大白话版</h2>
+<div class="tablewrap"><table><thead><tr><th>术语</th><th>大白话</th><th>专业一嘴（对外就这么说）</th></tr></thead><tbody><tr><td>ASR</td><td>把说话变成字</td><td>"转写用 Whisper 路线，整段离线解码，68 万小时弱监督训练（Radford 2023）"</td></tr><tr><td>说话人分离（Diarization）</td><td>分清哪句是问的、哪句是答的</td><td>"pyannote 离线管线，业界基准 DER 12% 量级（Bredin 2023），我们逐句下发分离置信度"</td></tr><tr><td>DER / WER</td><td>分错人/听错字的比率，<b>越低越好</b></td><td>"这是文献参考水平，我们的值以现场标定为准"</td></tr><tr><td>eGeMAPS / openSMILE</td><td>从声音里量出音调、抖动、亮度等 88 项"体检指标"</td><td>"可解释声学特征路线（Eyben 2016），不用黑盒情绪分类器"</td></tr><tr><td>jitter / shimmer / HNR</td><td>声带抖不抖 / 音量稳不稳 / 声音干净度——紧张时会变差</td><td>"jitter 是声带肌张力的声学代理指标"</td></tr><tr><td>F0</td><td>音调高低</td><td>"F0 上行结合停顿率下降，指向唤醒度上升（方向有文献，阈值我方定义）"</td></tr><tr><td>AU / FACS</td><td>面部肌肉动作编码：AU4=皱眉，AU7=眯眼，AU4+AU7 组合是典型负性微表情</td><td>"Ekman 1969 的 FACS 有解剖学基础，不是看图猜情绪"</td></tr><tr><td>微表情</td><td>零点几秒闪过、来不及伪装的表情</td><td>"持续 40–500ms（CASME II），学界对其有效性有争议——所以我们只做推断、附反事实"</td></tr><tr><td>姿态/手部分析</td><td>用骨架关键点看后仰、回避、搓手</td><td>"ViTPose + MediaPipe，逐帧离线可复算"</td></tr><tr><td>rPPG</td><td>不用戴设备，从脸色微变化算心率</td><td>"受控条件误差 ±3bpm 级（De Haan 2013），怕遮挡和抖动，失效就作废不硬凑"</td></tr><tr><td>HRV</td><td>心率间隔的波动，应激时规律会变</td><td>"HRV 与应激的关联有元分析（Kim 2018）"</td></tr><tr><td>话题边界</td><td>谈话从"聊业务"切到"聊钱"的那一下</td><td>"句向量相似度跳变 + 实体切换双判据（Sentence-BERT，EMNLP 2019）"</td></tr><tr><td>影响值</td><td>这段话对对象的"心理冲击权重"（0–1）</td><td>"四维加权：情绪冲击/认知冲突/利益相关/持续影响——原文未定义量纲，<b>我方定义、界面带依据</b>"</td></tr><tr><td>三级归因</td><td>L1 看到什么物理证据 → L2 命中哪条规则哪篇文献 → L3 得出什么心理假设</td><td>"自上而下逐层可核，结论必带反事实：'若当时环境噪声&gt;55dB，本结论不成立'"</td></tr><tr><td>ESCALATED</td><td>10 秒内 3 路以上信号同时报警→升级</td><td>"跨模态同窗聚合（框架见 Baltrušaitis 2019，门槛我方定义）"</td></tr><tr><td>素材切片</td><td>上传的每一份文件各自跑一遍分析，产出一张独立结果卡</td><td>"上传后所有文件都参与分析：一份素材一片切片，切片在报告附表 A 逐份列名，可追溯到具体文件"</td></tr><tr><td>扩展信号封顶</td><td>近红外/毫米波这类采样序列文件能上传，但结论只到"趋势"层，不给心理归因</td><td>"自定义口径 C 级：候选规则层恒为空、最高只到 ALERT、标'离线导入·非实时'——效应弱的线索不硬凑成结论"</td></tr></tbody></table></div>
+<h2>四、看到任何数字，先问三个问题（防露怯心法）</h2>
+<ol><li><b>"这是文献水平还是你们实测的？"</b> —— 项目里只允许两种标签：【文献参考水平】（如 DER 12.2%）和【实测现场标定】。凡是说不出属于哪种的数字，不要引用。</li><li><b>"这个阈值谁定的？"</b> —— 影响值权重、0.80 告警线、10 秒窗这些<b>全是自定义口径</b>，大方承认"原文未定义，我方定义，可标定"比硬编"学术标准"专业得多。</li><li><b>"演示里的 132Hz→178Hz 是真的吗？"</b> —— 不是，是脚本道具（D 级）。它的意义是证明"判定链每一步可追溯"，不证明检测精度。被问到就答："原型为回放演示，正式实现为最小真实推理接入 openSMILE+ASR，P1 阶段。"</li></ol>
+<h2>五、评审最可能问的 10 个问题（背下来）</h2>
+<ol><li><b>准确率多少？</b> →"招标原文未设量化门槛，我们不引用未复算的数字。口径是分模态检出率/误报率/Kappa，评测集建立后现场标定（指标表 Q1—Q15，其中 Q13—Q15 是素材级参与率、素材级可追溯率与扩展信号封顶一致率）。"</li><li><b>心理原因分析是不是算命？</b> →"不是。结论层强制三件套：置信度、反事实陈述、'模型推断非临床诊断'免责——这条红线写死在产品里，最有力依据是 DePaulo 2003 元分析：言语线索真实存在但效应弱，所以只能推断不能断言。"</li><li><b>近红外、毫米波接不接？</b> →"文件级已经接了——可以上传采样序列（CSV）一起进批分析，每份都出结果。但结论封顶在生理趋势层：不出心理归因、最高到 ALERT、标'离线导入·非实时'，因为是自定义口径 C 级。硬件在线接入与时钟同步是后续项，接口契约（PhysSensorAdapter）已给。"</li><li><b>为什么没有实时监看？</b> →"28.08 考察的是异常检测能力不是实时性；离线在 ASR、说话人分离、时序窗判定三个环节有可引文献的精度优势（流式缺右上下文）。我们用实时性换可验证精度。"</li><li><b>和连信 TrueSight 差在哪？</b> →"它押毫秒级实时+眼镜硬件，我们押离线高精度+可解释归因证据链——八大维度输出里没有'反事实'这个字段。"</li><li><b>数据隐私怎么保？</b> →"授权文书号是服务端硬卡口（缺了建不了会话），全程审计哈希链，导出留痕。"</li><li><b>规则库哪来的？</b> →"14 条规则逐条挂文献登记表：FACS、HRV 元分析等已挂接，部分段落定位在核，核不上的降级'待审规则'不进判定链——没有出处的规则不是规则，是猜测。"</li><li><b>换一段素材还能出结果吗？</b> →"能，这正是离线形态的优势：现场上传贵方素材，走同一条批分析管线出报告。"</li><li><b>影响值 0.82 什么意思？</b> →"[0,1] 相对量，四维分解逐项给依据（rationale_text），只用于本会话内排序，不可跨会话比较。"</li><li><b>多久能交付真系统？</b> →"三步：P0 原型已通（49 条断言，含多信号源上传全参与、扩展信号封顶）；P1 四周接最小真实推理（语音+语义两路可复算）+ 采样序列解析器；P2 十二周视觉+生理全链路与硬件在线接入。"</li></ol>
+<h2>六、话术红线（说错直接掉专业度）</h2>
+<ul><li>❌ "诊断出他有焦虑症" → ✅ "推断出'应激性紧张（中度）'，置信度 0.58，附反事实"</li><li>❌ "测谎系统" → ✅ "行为异常检测与心理变化分析，线索效应弱所以只做辅助研判"</li><li>❌ "准确率 95%" → ✅ "文献参考水平 + 我方现场标定口径"</li><li>❌ "AI 自动出报告" → ✅ "AI 起草、人审批发布，分析师不能自批"</li><li>❌ 引用演示脚本里的任何具体数值当能力证明 → ✅ 只引用 04 目录里 A 级文献</li></ul>
+<h2>七、30 分钟学习路径</h2>
+<div class="tablewrap"><table><thead><tr><th>时间</th><th>看什么</th><th>得到什么</th></tr></thead><tbody><tr><td>0—5min</td><td>本手册 §一、§二</td><td>一句话主线</td></tr><tr><td>5—15min</td><td>打开 <code>03_精简版界面可视稿.html</code> 十三屏图（含多信号源上传与逐素材切片），对照 §三术语表逐个找</td><td>画面与术语对上号</td></tr><tr><td>15—25min</td><td>跑一遍原型（<code>prototype-lite</code> 起服务，按 README 动线点一次）</td><td>亲手走完上传→报告</td></tr><tr><td>25—30min</td><td>背 §五 十个问答 + §六 红线</td><td>可上场</td></tr></tbody></table></div>
+<p>进阶（想再深一层）：<code>01_精简版调研报告.md</code> §3 文献表 → <code>04_技术出处目录.md</code> 全文 → 完整版 <code>投标材料_….md</code> 第四/七/八章。</p>
+</main></body></html>

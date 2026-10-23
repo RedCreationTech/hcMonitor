@@ -1,0 +1,226 @@
+<!doctype html><html lang=zh-CN><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>精简版验证操作手册 · 照着走一遍就能验完</title><style>
+:root { --line:#dfe3ea; --ink:#1c2330; --muted:#63708a; --bg:#fff; --accent:#0b57d0; }
+* { box-sizing:border-box }
+body { margin:0; padding:40px 24px 80px; background:#f5f6f8; color:var(--ink);
+  font:15px/1.7 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; }
+main { max-width:1360px; margin:0 auto; background:var(--bg); padding:44px 48px 64px;
+  border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 14px rgba(20,30,50,.06); }
+h1 { font-size:27px; margin:0 0 18px; padding-bottom:14px; border-bottom:3px solid var(--ink); }
+h2 { font-size:20px; margin:38px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+h3 { font-size:17px; margin:26px 0 10px; color:#2b3548 }
+p { margin:10px 0 }
+code { font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace; background:#f0f2f6;
+  padding:1px 5px; border-radius:4px; color:#134272; word-break:break-all }
+ul { margin:10px 0; padding-left:22px }
+ol { margin:10px 0; padding-left:24px }
+pre { margin:14px 0 22px; padding:14px 16px; background:#f7f9fc; border:1px solid var(--line);
+  border-left:4px solid #b9c6de; border-radius:8px; overflow-x:auto }
+pre code { background:none; padding:0; color:#2b3548; font-size:12.5px; line-height:1.6;
+  white-space:pre; word-break:normal }
+li { margin:4px 0 }
+hr { border:0; border-top:1px solid var(--line); margin:30px 0 }
+.tablewrap { overflow-x:auto; margin:14px 0 22px; border:1px solid var(--line); border-radius:8px }
+table { border-collapse:collapse; width:100%; font-size:13.5px }
+th,td { border-bottom:1px solid var(--line); border-right:1px solid #eceff4;
+  padding:9px 11px; text-align:left; vertical-align:top }
+th { background:#eef2f8; font-weight:600; white-space:nowrap; position:sticky; top:0; z-index:2 }
+tr:last-child td { border-bottom:0 }
+tbody tr:nth-child(even) { background:#fbfcfe }
+a { color:var(--accent) }
+figure { margin:16px 0 26px; padding:10px; border:1px solid var(--line); border-radius:8px; background:#fbfcfe }
+figure img { display:block; width:100%; max-width:1280px; margin:0 auto; border:1px solid #cfd6e2; border-radius:5px; background:#fff }
+figcaption { margin-top:8px; font-size:12.5px; color:var(--muted); text-align:center }
+img { max-width:100% }
+@media print { body { background:#fff; padding:0 } main { border:0; box-shadow:none; padding:0 } }
+</style></head><body><main>
+<h1>精简版验证操作手册 · 照着走一遍就能验完</h1>
+<p><b>项目</b>：基于对话内容的行为异常检测和心理变化分析技术（中关村新域新质创新挑战赛，需求编号 7008111111） <b>产品</b>：「言心」MindDialogue 精简版 —— 仅分析工作台的离线音视频分析闭环 <b>版本</b>：P0 脚本回放原型 · 手册编制日 2026-10-22 · 上游：<code>01_精简版调研报告.md</code>（招标原文逐字）、<code>02_精简版产品形态与功能划分.md</code>（28.01—28.08 覆盖矩阵、Q1—Q15）</p>
+<p>&gt; <b>这份手册解决什么</b>：给你一条可复现的操作路径，13 个用例、每个用例几步、每步点哪里、看到什么算对、对应招标哪一条。 &gt; <b>手册里的"实测值"从哪来</b>：全部是 2026-10-22 用 <code>prototype-lite/scripts/testkit-shots.mjs</code> 在 dev server 上跑真实链路时服务端当场返回的数字，截图与逐条记录见 <code>验证手册截图/</code>（汇总 <code>验证手册截图/取证记录.md</code>，分用例记录见 <code>验证手册截图/取证记录/&lt;用例&gt;.md</code>）。你手动走同一条链路会看到同样的结构，但<b>会话号、时间戳、进度百分比会变</b>（进度取决于你拍的那一瞬间），这些不是判据。 &gt; <b>判据是什么</b>：看"有没有、对不对、口径一致不一致"，不看数值大小。每个用例的"通过判据"就是打勾项。</p>
+<hr>
+<h2>一、前置条件</h2>
+<h3>1.1 环境</h3>
+<div class="tablewrap"><table><thead><tr><th>项</th><th>要求</th><th>备注</th></tr></thead><tbody><tr><td>Node.js</td><td>≥ 18（本机 v24.18.0 实测通过）</td><td><code>node -v</code></td></tr><tr><td>浏览器</td><td>Chrome / Edge（桌面版，需支持 <code>DataTransfer</code> 拖拽与 <code>video.duration</code> 本地读取）</td><td>Safari 未验</td></tr><tr><td>磁盘</td><td>原型 &lt;100 MB，测试素材包 26 MB</td><td>—</td></tr><tr><td>网络</td><td><b>不需要</b>：素材在本机浏览器内读元数据，不上传、不解码内容</td><td>这是产品口径的一部分</td></tr><tr><td>ffmpeg</td><td>可选，仅在你要自己复核素材规格时用（<code>ffprobe</code>）</td><td>素材已随包提供</td></tr></tbody></table></div>
+<p><b>Apple Silicon 已知坑</b>：<code>npm install</code> 后首次 <code>npm run dev</code> 可能报 <code>Cannot find module @rollup/rollup-darwin-arm64</code>。补装即可，不影响代码：</p>
+<pre><code>npm install --no-save @rollup/rollup-darwin-arm64@4.64.10</code></pre>
+<h3>1.2 启动与自检</h3>
+<pre><code>cd /Users/admin/Downloads/标书/精简版/prototype-lite
+npm install
+npm run dev        # http://127.0.0.1:5185 （固定端口，避开完整版 5175）</code></pre>
+<p>另开一个终端跑一次基线断言，确认引擎本身是好的再开始走用例：</p>
+<pre><code>cd /Users/admin/Downloads/标书/精简版/prototype-lite
+npm run verify     # 49 条需求覆盖断言，含 21 条多信号源（F / F2 组）</code></pre>
+<ul><li>☐ <code>npm run verify</code> 输出 49/49 通过</li><li>☐ 浏览器打开 http://127.0.0.1:5185 能看到席位登录页</li></ul>
+<p>&gt; ⚠️ <code>npm run verify</code> 与本手册用例<b>共用同一个内存引擎，不要并发跑</b>，两套断言会互相污染出假失败。 &gt; ⚠️ <code>verify</code> 收尾会把引擎恢复出厂状态。<b>跑完 verify 之后，任务台列表里只剩种子会话</b>，这是正常的，不是数据丢了。</p>
+<h3>1.3 席位与口令</h3>
+<div class="tablewrap"><table><thead><tr><th>席位</th><th>工号</th><th>角色</th><th>能做什么</th><th>用于哪些用例</th></tr></thead><tbody><tr><td>研判席</td><td><code>W-02</code></td><td>analyst</td><td>建会话、登记素材、起批分析、看结果、起草报告、提交复核</td><td>全部</td></tr><tr><td>复核席</td><td><code>R-01</code></td><td>reviewer</td><td>审批（通过/驳回）、发布、导出发布件</td><td>C1 第 12—15 步</td></tr></tbody></table></div>
+<p>口令统一 <code>1234</code>。<b>角色互斥在服务端校验</b>：分析师自己提交的报告，分析师席位点「通过」会被 403 拦下——这不是 bug，是职责分离（对应 28.04 结论可信度的制度设计）。</p>
+<p>&gt; <b>重要操作细节</b>：审批必须由<b>复核席登录后</b>在同一个浏览器会话里点，才生效。原因：服务端把"当前操作人"记在自己的 <code>state.viewer.person</code> 上，只有走登录页才会改它；在 URL 或 localStorage 里塞 <code>actor</code> 只影响界面显示，服务端仍认为你是分析师 → 403。手动验证时正常退出占席、改用 <code>R-01</code> 登录即可，不会遇到这个坑。</p>
+<h3>1.4 测试素材（13 份，全部随包）</h3>
+<p>目录：<code>prototype-lite/public/testkit/</code>，规格与用途见该目录下 <code>README.md</code>。下载后<b>拖进弹窗对应的登记框</b>即可，文件名不匹配会被服务端按类型归类。</p>
+<div class="tablewrap"><table><thead><tr><th>编号</th><th>文件</th><th>类型</th><th>关键规格</th><th>用在</th></tr></thead><tbody><tr><td>V1</td><td><code>V1_谈话室正面_音视频_156s.mp4</code></td><td>主信号·视频</td><td>h264 960×720 + aac，156.0s，3.1 MB</td><td>C1 / C3 / C4 / N3 / N4 / N9</td></tr><tr><td>V2</td><td><code>V2_谈话室侧面_音视频_192s.mp4</code></td><td>主信号·视频</td><td>h264 854×480，192.0s，3.3 MB</td><td>C4 / N3</td></tr><tr><td>A1</td><td><code>A1_单对象询问_录音_156s.m4a</code></td><td>主信号·音频</td><td>aac 96k，156.0s，1.9 MB</td><td>C2 / C4 / N3 / N5</td></tr><tr><td>A2</td><td><code>A2_双人谈话_录音_192s.mp3</code></td><td>主信号·音频</td><td>mp3 112k 44.1kHz，192.0s，2.7 MB</td><td>C4 / N3</td></tr><tr><td>E1</td><td><code>E1_近红外_hbo_156s_1Hz.csv</code></td><td>扩展·近红外</td><td>逗号，1 Hz，157 行</td><td>C3 / N9</td></tr><tr><td>E2</td><td><code>E2_毫米波_resp_156s_1Hz.csv</code></td><td>扩展·毫米波</td><td>逗号，1 Hz，157 行</td><td>C3 / N9</td></tr><tr><td>E3</td><td><code>E3_近红外_hbo_156s_10Hz.csv</code></td><td>扩展·近红外</td><td>逗号，10 Hz，1561 行，首列带小数</td><td>C5</td></tr><tr><td>E4</td><td><code>E4_毫米波_resp_156s_25Hz.csv</code></td><td>扩展·毫米波</td><td>逗号，25 Hz，3901 行</td><td>C5</td></tr><tr><td>E5</td><td><code>E5_近红外_hbo_156s_2Hz.tsv</code></td><td>扩展·近红外</td><td><b>制表符</b>分隔，2 Hz</td><td>附录（可替换 E1）</td></tr><tr><td>X1</td><td><code>X1_短素材边界件_音视频_40s.mp4</code></td><td>主信号·视频</td><td>40s &lt; 脚本时间轴 152s</td><td>附录</td></tr><tr><td>X2</td><td><code>X2_边界_首列为物理量_无时间轴.csv</code></td><td>边界</td><td>首列是 HbO 浓度</td><td>N5</td></tr><tr><td>X3</td><td><code>X3_边界_超4MB采样序列.csv</code></td><td>边界</td><td>6.0 MB &gt; 解析上限 4 MB</td><td>N5</td></tr><tr><td>X4</td><td><code>X4_边界_JSON采样序列.json</code></td><td>边界</td><td>JSON 结构</td><td>N7</td></tr></tbody></table></div>
+<ul><li>☐ 13 个文件齐全，<code>ls prototype-lite/public/testkit/</code> 数量对得上</li><li>☐ 音视频能在本机播放器正常打开（素材内容不影响判定，但打不开说明包损坏）</li></ul>
+<h3>1.5 怎么拖素材（三种都行）</h3>
+<ol><li><b>拖拽</b>：从访达/资源管理器把文件拖到弹窗里对应的虚线框（主信号·视频 / 主信号·音频 / 扩展信号·近红外 / 扩展信号·毫米波）。</li><li><b>点击选择</b>：点虚线框 → 系统文件选择器 → 选中文件。</li><li><b>一次多选</b>：近红外与毫米波两个框都支持一次选多个文件（C3 就是一次选 E1+E2）。</li></ol>
+<p>拖进来后，弹窗下方会列出一行行的登记结果：<code>类型标签 + 文件名 + 大小 + 时长/行数</code>，以及一行<b>计数说明</b>：「主信号 N 份 / 扩展信号 M 份。」加一句封顶口径提示。<b>这一行就是本用例最主要的证据</b>，务必核对份数与口径文案。</p>
+<hr>
+<h2>二、用例总览</h2>
+<div class="tablewrap"><table><thead><tr><th>用例</th><th>验什么</th><th>素材</th><th>对应招标条目</th><th>对应指标</th></tr></thead><tbody><tr><td><b>C1</b></td><td>音视频单路主链路：登记→起批→逐段进度→结果→三级归因→报告→审批→发布→导出</td><td>V1</td><td>28.01 / 28.03 / 28.04 / 28.07</td><td>Q8 Q9 Q10 Q11 Q12</td></tr><tr><td><b>C2</b></td><td>纯音频单模态：不可用模态显性标注为"不可用"而非 0 值</td><td>A1</td><td>28.05 / 28.06</td><td>Q8 Q11</td></tr><tr><td><b>C3</b></td><td>音视频 + 双扩展信号：三份全进分析、逐份切片、会话层融合成一份报告</td><td>V1 + E1 + E2</td><td>28.01 / 28.05 / 28.06</td><td>Q13 Q14 Q15</td></tr><tr><td><b>C4</b></td><td>四份主素材多文件：逐份切片互不覆盖、融合不重复计数</td><td>V1 + V2 + A1 + A2</td><td>28.06</td><td>Q13 Q14</td></tr><tr><td><b>C5</b></td><td>仅扩展信号：判定链整体裁撤并逐条给原因，不伪装成"检测正常"</td><td>E3 + E4</td><td>28.06 / 28.07</td><td>Q11 Q15</td></tr><tr><td><b>N1</b></td><td>缺授权文书号 → 服务端 403 <code>CONSENT_REQUIRED</code>（R1 卡口）</td><td>V1</td><td>合规前置（docx §28 注记）</td><td>Q12</td></tr><tr><td><b>N2</b></td><td>未登记素材的会话不可起批 → 422</td><td>无</td><td>链路完整性</td><td>—</td></tr><tr><td><b>N3</b></td><td>分析进行中重复起批 → 409 <code>ANALYZING</code>，不产生第二份结果</td><td>V1+V2+A1+A2</td><td>链路完整性</td><td>Q13</td></tr><tr><td><b>N4</b></td><td>同一文件重复登记自动去重</td><td>V1 ×2</td><td>登记准确性</td><td>Q13</td></tr><tr><td><b>N5</b></td><td>时基读不出的采样序列：显示"时基未读出"，不猜</td><td>X2 + X3</td><td>如实披露</td><td>—</td></tr><tr><td><b>N7</b></td><td>JSON 采样序列本版不支持：同样显示"时基未读出"</td><td>X4</td><td>如实披露</td><td>—</td></tr><tr><td><b>N8</b></td><td>已归档会话只读，起批按钮禁用 + 服务端 409</td><td>种子会话</td><td>审计与留痕</td><td>Q12</td></tr><tr><td><b>N9</b></td><td>扩展信号封顶口径在结果页 / CSV / 报告 / 导出件四处一致</td><td>V1 + E1 + E2</td><td>28.01 开放面 / 28.07</td><td><b>Q15</b></td></tr></tbody></table></div>
+<p>&gt; 用例编号 N6 本轮未设用例（预留位），编号不连续属正常。 &gt; 表里各用例的<b>对象编号 / 场景 / 授权文书号</b>用的是实拍脚本 <code>testkit-shots.mjs</code> 里的值，与截图画面一一对应；你手动走时填什么都行，只要格式合法（这些字段不参与判定）。 &gt; <b>素材才是判据</b>：请严格按表里"素材"列拖同一批文件，否则份数、段数、切片数对不上。</p>
+<hr>
+<h2>三、主用例（C1—C5）</h2>
+<h3>C1 · 音视频单路主链路（12 分钟，其余用例的基础）</h3>
+<p><b>验什么</b>：一份 156s 谈话录像进来，能不能走完「登记 → 离线批分析 → 六类异常 → 三级归因 → 报告起草 → 复核审批 → 发布导出」这条闭环，并且每一环都有可核对的证据。这是 28.01 / 28.03 / 28.04 / 28.07 的正面实例。</p>
+<div class="tablewrap"><table><thead><tr><th>步</th><th>操作</th><th>预期看到</th><th>实测值（2026-10-22）</th></tr></thead><tbody><tr><td>1</td><td>首页用 <code>W-02</code> / <code>1234</code> 登录</td><td>顶栏出现「分析师 W-02（分析师）· 研判席 2」，左侧只剩「任务台·素材分析」和「分析报告与审批」两个入口</td><td>—</td></tr><tr><td>2</td><td>任务台点「新建会话」，填对象编号 <code>M-T101</code>、场景 <code>验证 C1 · 音视频单路离线复盘 · 谈话室 03</code>、授权文书编号 <code>SQ-2026-T101</code>，把 <b>V1</b> 拖进「主信号·视频」</td><td>弹窗下方出现 V1 登记行（3.1 MB · 156s），计数行「主信号 1 份 / 扩展信号 0 份。未登记扩展信号：本次仅音视频主信号链。」</td><td>份数 1 · 时基未读出 0</td></tr><tr><td>3</td><td>点「创建」</td><td>任务台列表顶部新增一行，带「离线导入 · 1 份」标签，状态待开始</td><td>会话号 SES-20261022-N07</td></tr><tr><td>4</td><td>该行点「离线分析」</td><td>行内出现按素材逐段推进的进度条，状态转「离线分析中」，顶部统计卡「离线分析中」计数 +1</td><td>抓拍时 53%，当前段〔V1…〕语义通道：话题切分与四维影响值，<b>总段数 7</b>（视频 6 步 + 会话级融合 1 步）</td></tr><tr><td>5</td><td>等进度走完，点「查看结果」</td><td>结果页标题「离线批分析结果 · &lt;会话号&gt;」，汇总行给出素材/切片/上报/裁撤/模态/报告号</td><td>素材 1 份 / 切片 1 片 / 上报 7 条（扩展 0）/ 裁撤 0 条 / 可用模态 6/6 / 报告 RP-2026-05</td></tr><tr><td>6</td><td>滚到「素材切片」</td><td>一张切片卡对应一份文件，列出该文件跑的解析链（视频 6 段）与六路模态勾选（语音·语义·表情·姿态·手部·生理全 ✓）</td><td>切片数 == 登记数 == 1</td></tr><tr><td>7</td><td>滚到「异常事件」，点任意一行</td><td>抽屉展开三级：L1 观察层（可核对的时间窗与实测现象）→ L2 候选规则（规则号 + 文献字段）→ L3 结论层（含反事实与免责）</td><td>展开事件 EV-007</td></tr><tr><td>8</td><td>滚到「话题切分与语义影响值」</td><td>表格有话题行、边界秒、标签、影响值、四维分解、边界判定依据</td><td>19 轮对话驱动的 4 个话题段</td></tr><tr><td>9</td><td>滚到「转写原文与分角色置信度」</td><td>逐轮转写 + 说话人色块 + 分角色置信度</td><td>共 19 轮</td></tr><tr><td>10</td><td>左侧切到「分析报告与审批」</td><td>列表首行是刚自动起草的报告，状态「起草中」，右侧步骤条停在 1 起草；正文六章齐全，含「精度受限」提示块</td><td>RP-2026-05</td></tr><tr><td>11</td><td>点「导出 HTML 件」并打开</td><td>文件顶部有水印「草稿 · 未经复核审批」，含附表 A 素材切片一览</td><td>审计 seq=398 · encrypted=false</td></tr><tr><td>12</td><td>退出占席，改用 <code>R-01</code> / <code>1234</code> 登录，回到报告页点「提交复核」</td><td>步骤条走到 3 审批，状态「待复核」，复核人列显示 复核人 R-01</td><td>status=pending_review</td></tr><tr><td>13</td><td>点「通过」，再点「发布」</td><td>状态「已发布」，发布列出现时间；四个流转按钮全部变灰（终态不可重放）</td><td>发布时间 2026-10-22 11:24</td></tr><tr><td>14</td><td>再点「导出 HTML 件」</td><td>水印消失；含附表 A；正文含「离线导入 · 非实时」</td><td>水印=无 · 附表A=true · 非实时标注=true</td></tr><tr><td>15</td><td>结果页点「导出 CSV（含裁撤条目）」</td><td>下载到的 CSV 行数与页面口径一致，表头含 <code>asset</code> 列</td><td><b>11 行</b> · <code>trend_only</code> 0 行 · 含 asset 列</td></tr></tbody></table></div>
+<p><b>证据截图</b></p>
+<figure><img src="验证手册截图/C1_01_login_gate.png" alt="C1 步骤1 · 席位登录（顶栏席位与两个入口）" loading=lazy><figcaption>C1 步骤1 · 席位登录（顶栏席位与两个入口）</figcaption></figure>
+<figure><img src="验证手册截图/C1_02_register.png" alt="C1 步骤2 · 新建会话登记 V1（计数行「主信号 1 份 / 扩展信号 0 份」）" loading=lazy><figcaption>C1 步骤2 · 新建会话登记 V1（计数行「主信号 1 份 / 扩展信号 0 份」）</figcaption></figure>
+<figure><img src="验证手册截图/C1_04_progress.png" alt="C1 步骤4 · 离线批分析进行中（行内逐段进度）" loading=lazy><figcaption>C1 步骤4 · 离线批分析进行中（行内逐段进度）</figcaption></figure>
+<figure><img src="验证手册截图/C1_05_result_top.png" alt="C1 步骤5 · 结果页汇总与模态可用性" loading=lazy><figcaption>C1 步骤5 · 结果页汇总与模态可用性</figcaption></figure>
+<figure><img src="验证手册截图/C1_06_slices.png" alt="C1 步骤6 · 素材切片卡（解析链逐段 + 六路模态勾选）" loading=lazy><figcaption>C1 步骤6 · 素材切片卡（解析链逐段 + 六路模态勾选）</figcaption></figure>
+<figure><img src="验证手册截图/C1_08_attribution.png" alt="C1 步骤7 · 三级归因抽屉（L1 观察 → L2 规则 → L3 结论含反事实）" loading=lazy><figcaption>C1 步骤7 · 三级归因抽屉（L1 观察 → L2 规则 → L3 结论含反事实）</figcaption></figure>
+<figure><img src="验证手册截图/C1_10_transcript.png" alt="C1 步骤9 · 转写原文与分角色置信度" loading=lazy><figcaption>C1 步骤9 · 转写原文与分角色置信度</figcaption></figure>
+<figure><img src="验证手册截图/C1_12_export_draft.png" alt="C1 步骤11 · 报告草稿件（水印「草稿 · 未经复核审批」）" loading=lazy><figcaption>C1 步骤11 · 报告草稿件（水印「草稿 · 未经复核审批」）</figcaption></figure>
+<figure><img src="验证手册截图/C1_14_approve_publish.png" alt="C1 步骤13 · 复核席审批与发布（按钮终态全灰）" loading=lazy><figcaption>C1 步骤13 · 复核席审批与发布（按钮终态全灰）</figcaption></figure>
+<figure><img src="验证手册截图/C1_15_export_published.png" alt="C1 步骤15 · 发布件（无水印 · 含附表 A）" loading=lazy><figcaption>C1 步骤15 · 发布件（无水印 · 含附表 A）</figcaption></figure>
+<p>导出件本体（可直接用浏览器打开对照）：<code>验证手册截图/C1_导出_草稿未发布.html</code>、<code>验证手册截图/C1_导出_已发布.html</code></p>
+<p><b>通过判据</b></p>
+<ul><li>☐ 登记份数、切片份数、报告附表 A 的文件名三处一致（1 份 V1）</li><li>☐ 六类异常模态全部命中（语音/语义/表情/生理/姿态/手部），且至少 1 条 ESCALATED</li><li>☐ 任一异常展开后有 L1 观察层证据 + L2 文献字段 + L3 反事实与免责（缺一即不通过）</li><li>☐ 草稿件有水印、发布件无水印，两份都含附表 A</li><li>☐ 审批由复核席完成，且分析师席位下「通过」按钮点不动或返回 403</li><li>☐ 页面底部常驻免责行：「不构成临床心理诊断；所有结论为模型推断」</li></ul>
+<p><b>对应招标</b>：28.01（对话为驱动、捕捉行为/生理异常并分析心理原因）、28.03（语音输入→语音与言语异常→心理原因）、28.04（六类异常全覆盖 + 归因）、28.07（异常类型清单）。 <b>对应指标</b>：Q8 六类覆盖、Q9 单素材分析时长、Q10 报告生成时长、Q11 可追溯率、Q12 审计完整率。</p>
+<hr>
+<h3>C2 · 纯音频单模态（4 分钟）</h3>
+<p><b>验什么</b>：只给录音，表情/姿态/手部/生理四路必须显示<b>不可用</b>，而不是给出 0 值或"正常"。这是 28.06「可单模态」最容易造假的地方。</p>
+<div class="tablewrap"><table><thead><tr><th>步</th><th>操作</th><th>预期看到</th><th>实测值</th></tr></thead><tbody><tr><td>1</td><td>新建会话 <code>M-T102</code> / 场景 <code>验证 C2 · 纯音频离线分析 · 谈话室 01</code> / 文书号 <code>SQ-2026-T102</code>，<b>只</b>把 A1 拖进「主信号·音频」</td><td>计数行「主信号 1 份 / 扩展信号 0 份」；音频框下方灰字说明「无画面帧，表情/姿态/手部/生理四路按不可用处理」</td><td>份数 1</td></tr><tr><td>2</td><td>创建 → 起批</td><td>总段数 <b>6</b>（音频 5 步 + 融合 1 步），比视频少一段视觉通道</td><td>抓拍 61%，当前段〔A1…〕语义通道</td></tr><tr><td>3</td><td>查看结果 → 汇总</td><td>可用模态 <b>2/6</b>；上报 2 条、<b>裁撤 5 条</b></td><td>素材 1 / 切片 1 / 上报 2 / 裁撤 5</td></tr><tr><td>4</td><td>「六类信号的可用性」</td><td>语音 ✓、语义 ✓，表情/姿态/手部/生理为 ✗ 且写明原因，<b>没有任何 0 值指标</b></td><td>2/6</td></tr><tr><td>5</td><td>「素材切片」</td><td>切片卡解析链 5 段，末段写明「#5 视觉与生理通道：素材无画面帧，四路按不可用处理（不产出 0 值）」</td><td>5 段</td></tr><tr><td>6</td><td>「裁撤条目」</td><td>5 条被裁撤项逐条给原因，不并入"检测正常"</td><td>5 条</td></tr></tbody></table></div>
+<figure><img src="验证手册截图/C2_01_register.png" alt="C2 步骤1 · 纯音频登记（音频框不可用说明）" loading=lazy><figcaption>C2 步骤1 · 纯音频登记（音频框不可用说明）</figcaption></figure>
+<figure><img src="验证手册截图/C2_05_modality.png" alt="C2 步骤4 · 模态可用性 2/6（四路显性不可用）" loading=lazy><figcaption>C2 步骤4 · 模态可用性 2/6（四路显性不可用）</figcaption></figure>
+<figure><img src="验证手册截图/C2_06_slices.png" alt="C2 步骤5 · 音频切片卡（5 段解析链，视觉/生理标注不可用）" loading=lazy><figcaption>C2 步骤5 · 音频切片卡（5 段解析链，视觉/生理标注不可用）</figcaption></figure>
+<p><b>通过判据</b></p>
+<ul><li>☐ 可用模态显示 2/6，且四路不可用是"不可用"而不是 0 或"正常"</li><li>☐ 裁撤条目 5 条且每条有原因文字</li><li>☐ 报告「精度受限」块自动列出被降级模态</li></ul>
+<p><b>对应招标</b>：28.05（语音模态输入）、28.06（单模态方法）。</p>
+<hr>
+<h3>C3 · 音视频 + 双扩展信号（5 分钟）</h3>
+<p><b>验什么</b>：28.01「不限于语音、视频、近红外、毫米波等单一或多种信号的输入」的多路实例——三份文件全部进入分析、各出一份切片，最后在会话层融合成<b>一份</b>报告。</p>
+<div class="tablewrap"><table><thead><tr><th>步</th><th>操作</th><th>预期看到</th><th>实测值</th></tr></thead><tbody><tr><td>1</td><td>新建会话 <code>M-T103</code>（场景 <code>验证 C3 · 多信号源融合 · 谈话室 03</code>、文书号 <code>SQ-2026-T103</code>），V1 拖进「主信号·视频」，E1 拖进「近红外」、E2 拖进「毫米波」</td><td>计数行「主信号 1 份 / 扩展信号 2 份」，并紧跟封顶口径：「本次含扩展信号：它们全部参与分析，但结论只到生理趋势层，不进升级、不出心理归因。」</td><td>份数 3 · 时基未读出 0</td></tr><tr><td>2</td><td>创建 → 起批</td><td>总段数 <b>15</b> = 视频 6 + 近红外 4 + 毫米波 4 + 融合 1</td><td>抓拍 25%，总段数 15</td></tr><tr><td>3</td><td>查看结果 → 汇总</td><td>素材 3 份 / 切片 <b>3</b> 片 / 上报 9 条（其中扩展 2 条）/ 裁撤 0 / 模态 6/6</td><td>与左列一致</td></tr><tr><td>4</td><td>「素材切片」</td><td>三张切片卡，扩展信号卡只有 4 段解析链、模态仅生理，且卡上带「结论上限」说明</td><td>3/3 份产出切片</td></tr><tr><td>5</td><td>「异常事件」</td><td>扩展信号事件行：严重度最高 ALERT（无 ESCALATED）、候选规则层为空、结论列显示「只到趋势层 · 不出归因」</td><td>2 条</td></tr><tr><td>6</td><td>「报告与审批」→ 打开草稿</td><td>第二章「素材切片与各自贡献」逐份列出三个文件名与其可解析/不可用模态；「精度受限」块列出扩展信号份数与封顶口径</td><td>RP-2026-05</td></tr></tbody></table></div>
+<figure><img src="验证手册截图/C3_01_register.png" alt="C3 步骤1 · 三路素材登记（计数行含封顶口径）" loading=lazy><figcaption>C3 步骤1 · 三路素材登记（计数行含封顶口径）</figcaption></figure>
+<figure><img src="验证手册截图/C3_03_progress.png" alt="C3 步骤2 · 三路素材逐段推进" loading=lazy><figcaption>C3 步骤2 · 三路素材逐段推进</figcaption></figure>
+<figure><img src="验证手册截图/C3_04_result_top.png" alt="C3 步骤3 · 结果页汇总（3 素材 / 3 切片 / 上报 9 含扩展 2）" loading=lazy><figcaption>C3 步骤3 · 结果页汇总（3 素材 / 3 切片 / 上报 9 含扩展 2）</figcaption></figure>
+<figure><img src="验证手册截图/C3_06_ext_slice.png" alt="C3 步骤4 · 扩展信号切片卡（4 段解析链 + 结论上限说明）" loading=lazy><figcaption>C3 步骤4 · 扩展信号切片卡（4 段解析链 + 结论上限说明）</figcaption></figure>
+<figure><img src="验证手册截图/C3_07_anomalies.png" alt="C3 步骤5 · 异常表中的扩展信号行（封顶 ALERT、不出归因）" loading=lazy><figcaption>C3 步骤5 · 异常表中的扩展信号行（封顶 ALERT、不出归因）</figcaption></figure>
+<p><b>通过判据</b></p>
+<ul><li>☐ 登记 3 份 → 切片 3 片（<b>没有文件被静默跳过</b>，这是 Q13）</li><li>☐ 扩展信号事件 2 条，全部封顶在 ALERT、候选规则层为空</li><li>☐ 报告第二章逐份列出三个文件名，且「精度受限」块自动出现</li><li>☐ 上报 9 条 == 主信号 7 条 + 扩展 2 条，扩展条目单列不混入主链</li></ul>
+<p><b>对应招标</b>：28.01（多信号输入）、28.05/28.06（多模态）。<b>对应指标</b>：Q13 素材级参与率、Q14 素材级可追溯率、Q15 封顶一致率。</p>
+<hr>
+<h3>C4 · 四份主素材多文件（5 分钟）</h3>
+<p><b>验什么</b>：同一类信号给多份文件（两路视频 + 两路音频，不同分辨率/容器/采样率），逐份切片互不覆盖，融合层不重复计数。</p>
+<div class="tablewrap"><table><thead><tr><th>步</th><th>操作</th><th>预期看到</th><th>实测值</th></tr></thead><tbody><tr><td>1</td><td>新建会话 <code>M-T104</code>（场景 <code>验证 C4 · 多路文件逐份切片 · 谈话室 03</code>、文书号 <code>SQ-2026-T104</code>），V1+V2 拖进「主信号·视频」，A1+A2 拖进「主信号·音频」</td><td>计数行「主信号 4 份 / 扩展信号 0 份」；四行登记各自读出时长（156s / 192s / 156s / 192s）</td><td>份数 4 · 时基未读出 0</td></tr><tr><td>2</td><td>创建 → 起批</td><td>总段数 <b>23</b> = 6+6+5+5 + 融合 1</td><td>抓拍 16%，总段数 23</td></tr><tr><td>3</td><td>查看结果 → 汇总</td><td>素材 4 份 / 切片 <b>4</b> 片 / 上报 7 条（扩展 0）/ 裁撤 0 / 模态 6/6</td><td>与左列一致</td></tr><tr><td>4</td><td>「素材切片」</td><td>四张卡：V1、V2 各 6 段全模态 ✓；A1、A2 各 5 段且表情/姿态/手部/生理 ✗；每卡「支撑事件」列可点</td><td>4 张卡</td></tr><tr><td>5</td><td>对照上报条数</td><td>4 份素材都出切片，但会话层融合后<b>仍只上报 7 条</b>（同窗聚合，不重复计），这是融合语义正确的关键</td><td>7 条</td></tr></tbody></table></div>
+<figure><img src="验证手册截图/C4_01_register.png" alt="C4 步骤1 · 四份主素材登记" loading=lazy><figcaption>C4 步骤1 · 四份主素材登记</figcaption></figure>
+<figure><img src="验证手册截图/C4_03_progress.png" alt="C4 步骤2 · 四路素材并行推进（总段数 23）" loading=lazy><figcaption>C4 步骤2 · 四路素材并行推进（总段数 23）</figcaption></figure>
+<figure><img src="验证手册截图/C4_05_slices.png" alt="C4 步骤4 · 四张切片卡逐份列示（视频 6 段 / 音频 5 段）" loading=lazy><figcaption>C4 步骤4 · 四张切片卡逐份列示（视频 6 段 / 音频 5 段）</figcaption></figure>
+<p><b>通过判据</b></p>
+<ul><li>☐ 4 份 → 4 张切片卡，文件名与登记顺序一致</li><li>☐ 音频卡的视觉/生理四路为 ✗，视频卡为 ✓</li><li>☐ 上报条数不因素材变多而翻倍（7 条，与 C1 同口径）</li><li>☐ 导出 CSV 每条告警的 <code>asset</code> 列能指回具体文件（Q14）</li></ul>
+<p><b>对应招标</b>：28.06（多模态方法、逐素材切片 + 会话层融合）。<b>对应指标</b>：Q13、Q14。</p>
+<hr>
+<h3>C5 · 仅扩展信号（4 分钟）</h3>
+<p><b>验什么</b>：最容易出假象的一种输入——只给近红外和毫米波、没有音视频。正确做法是<b>整条脚本判定链裁撤并逐条说明原因</b>，而不是显示"未检出异常"。</p>
+<div class="tablewrap"><table><thead><tr><th>步</th><th>操作</th><th>预期看到</th><th>实测值</th></tr></thead><tbody><tr><td>1</td><td>新建会话 <code>M-T105</code>（场景 <code>验证 C5 · 无音视频仅扩展信号 · 谈话室 03</code>、文书号 <code>SQ-2026-T105</code>），E3 拖进「近红外」、E4 拖进「毫米波」，音视频两框留空</td><td>计数行「主信号 0 份 / 扩展信号 2 份」+ 封顶口径</td><td>份数 2 · 时基未读出 0</td></tr><tr><td>2</td><td>创建 → 起批</td><td>总段数 9 = 4+4+1，当前段文案是「基线校正与切片：以静息段为基线，按 10s 窗切分趋势，仅出生理趋势层」</td><td>抓拍 41%</td></tr><tr><td>3</td><td>查看结果 → 汇总</td><td>素材 2 / 切片 2 / 上报 2 条（全部扩展）/ <b>裁撤 11 条</b> / 可用模态 <b>0/6</b></td><td>与左列一致</td></tr><tr><td>4</td><td>「话题切分与语义影响值」</td><td>空表 + 「暂无数据」，<b>不编造话题</b></td><td>空</td></tr><tr><td>5</td><td>「转写原文」</td><td>标题为「转写原文与分角色置信度（共 0 轮）」</td><td>0 轮</td></tr><tr><td>6</td><td>「裁撤条目」</td><td>11 条：T1—T4 原因「本会话只登记了扩展信号素材，没有音视频输入，语义通道不成链」；EV-001—EV-007 原因「本会话只登记了扩展信号素材，脚本判定链（音视频口径）没有输入」。下方一行说明裁撤条目同时写进审计 <code>anomaly.suppressed</code>，CSV 以 <code>outcome=suppressed</code> 同表保留</td><td>4 + 7 = 11 条</td></tr></tbody></table></div>
+<figure><img src="验证手册截图/C5_01_register.png" alt="C5 步骤1 · 仅扩展信号登记（主信号 0 份）" loading=lazy><figcaption>C5 步骤1 · 仅扩展信号登记（主信号 0 份）</figcaption></figure>
+<figure><img src="验证手册截图/C5_04_result_top.png" alt="C5 步骤3 · 结果页汇总（可用模态 0/6 · 裁撤 11 条）" loading=lazy><figcaption>C5 步骤3 · 结果页汇总（可用模态 0/6 · 裁撤 11 条）</figcaption></figure>
+<figure><img src="验证手册截图/C5_06_suppressed.png" alt="C5 步骤6 · 裁撤条目逐条给原因 + 话题/转写为空" loading=lazy><figcaption>C5 步骤6 · 裁撤条目逐条给原因 + 话题/转写为空</figcaption></figure>
+<p><b>通过判据</b></p>
+<ul><li>☐ 可用模态 0/6，且页面上<b>没有</b>出现"检测正常/无异常"这类表述</li><li>☐ 裁撤 11 条与上报 2 条之和 == 脚本判定链条目总数（13），一条不丢</li><li>☐ 话题表与转写为空，不是 0 分或占位假数据</li><li>☐ 两条扩展事件仍是封顶 ALERT/WARN，不出归因</li></ul>
+<p><b>对应招标</b>：28.06（方法裁剪）、28.07（异常类型口径诚实）。<b>对应指标</b>：Q11、Q15。</p>
+<hr>
+<h2>四、负向与边界用例（N1—N9）</h2>
+<p>这一组验的是"不该发生的事会不会被拦住"和"读不出来的东西会不会被猜出来"。招标原文没有量化门槛，评审时对这类卡口的追问通常最尖锐。</p>
+<h3>N1 · 缺授权文书号 → 服务端 403（R1 卡口）</h3>
+<p><b>操作</b>：新建会话 <code>M-N1</code>，场景 <code>验证 N1 · 不填授权文书号 · 谈话室 03</code>，<b>授权文书编号留空</b>，V1 拖进视频框，点「创建」。</p>
+<p><b>预期</b>：</p>
+<ol><li>弹窗内该字段红字必填提示，前端不放行；</li><li>即使绕过前端直接调 <code>POST /v1/sessions</code>（不带 <code>consent</code>），服务端返回 <b>HTTP 403</b>，<code>error=CONSENT_REQUIRED</code>，消息「缺少知情告知文书号，会话不可创建（R1）」；</li><li>对照组：同一份素材补上文书号后创建 <b>HTTP 200</b>，返回会话号。</li></ol>
+<p><b>实测</b>：403 <code>CONSENT_REQUIRED</code>；对照组 200 · SES-20261022-N08。</p>
+<figure><img src="验证手册截图/N1_01_n1_gate.png" alt="N1 · 缺授权文书号被拦下（红字必填 + 403）" loading=lazy><figcaption>N1 · 缺授权文书号被拦下（红字必填 + 403）</figcaption></figure>
+<p><b>怎么绕过前端复验第 2 点</b>（可选，用 curl）：</p>
+<pre><code>curl -s -o /dev/null -w '%{http_code}\n' -X POST http://127.0.0.1:5185/v1/sessions \
+  -H 'content-type: application/json' \
+  -d '{"subject":"M-N1","scene":"绕过前端","source":"offline_import"}'
+# 期望输出 403</code></pre>
+<ul><li>☐ 前端红字必填；☐ 直连接口 403；☐ 补上文书号后 200</li></ul>
+<h3>N2 · 未登记素材的会话不可起批 → 422</h3>
+<p><b>操作</b>：新建会话时<b>一个素材都不拖</b>（对象编号 <code>M-N2</code>、场景 <code>验证 N2 · 表单填全但不拖文件 · 谈话室 03</code>、文书号 <code>SQ-2026-N2</code> 全部填齐），创建成功后点行内「离线分析」。</p>
+<p><b>预期</b>：创建时弹窗给出「未登记素材」的 warning 提示；起批返回 <b>HTTP 422</b>，消息「本会话未登记素材文件，离线分析没有输入」。</p>
+<p><b>实测</b>：空素材会话 SES-20261022-N09 → 起批 422。</p>
+<figure><img src="验证手册截图/N2_01_n2_gate.png" alt="N2 · 空素材起批被拦（422 提示）" loading=lazy><figcaption>N2 · 空素材起批被拦（422 提示）</figcaption></figure>
+<ul><li>☐ 422 而不是"跑出一个空结果"</li></ul>
+<h3>N3 · 分析进行中重复起批 → 409，且不产生第二份结果</h3>
+<p><b>操作</b>：用 V1+V2+A1+A2 建会话 <code>M-N3</code> 并起批，<b>趁进度没走完</b>再点一次「离线分析」（或连发两次 <code>analyze-offline</code>）。</p>
+<p><b>预期</b>：第一次 200；第二次 <b>409 <code>ANALYZING</code></b>，消息「本会话离线分析进行中，请等待完成」；等完成后切片仍为 4 片、段数不翻倍。</p>
+<p><b>实测</b>：200 / 409 ANALYZING；完成后切片 4 片 · 段数已收敛（重复起批没有产生第二份结果）。</p>
+<figure><img src="验证手册截图/N3_02_n3_conflict.png" alt="N3 · 重复起批时行内进度仍在推进（服务端已拒第二次）" loading=lazy><figcaption>N3 · 重复起批时行内进度仍在推进（服务端已拒第二次）</figcaption></figure>
+<ul><li>☐ 第二次 409；☐ 完成后结果仍是一份（切片 4 / 段数 23）</li></ul>
+<h3>N4 · 同一文件重复登记自动去重</h3>
+<p><b>操作</b>：新建会话 <code>M-N4</code>，把 <b>V1 拖两次</b>进同一个视频框。</p>
+<p><b>预期</b>：登记列表仍只有 1 行 V1，计数行「主信号 1 份」，弹窗标题处显示「已登记 1 份」。</p>
+<p><b>实测</b>：份数 1 · 时基未读出 0。</p>
+<figure><img src="验证手册截图/N4_01_register.png" alt="N4 · 同名文件重复拖入后份数仍为 1" loading=lazy><figcaption>N4 · 同名文件重复拖入后份数仍为 1</figcaption></figure>
+<ul><li>☐ 份数 1，不出现两条相同素材</li></ul>
+<h3>N5 · 时基读不出的采样序列 → 如实显示"时基未读出"</h3>
+<p><b>操作</b>：新建会话 <code>M-N5</code>（场景 <code>验证 N5 · 首列非时间轴 + 超 4MB · 谈话室 03</code>），<b>A1</b> 拖进「主信号·音频」；把 <b>X2</b>（首列是 HbO 物理量、无时间轴）和 <b>X3</b>（6.0 MB 超解析上限）分别拖进近红外与毫米波框。</p>
+<p><b>预期</b>：两行登记显示「时基未读出」，计数行给出「时基未读出 2」；系统<b>不猜</b>采样率、不显示编造的行数/时长。</p>
+<p><b>实测</b>：份数 3 · <b>时基未读出 2</b>。</p>
+<figure><img src="验证手册截图/N5_01_register.png" alt="N5 · 两个边界件均显示"时基未读出"" loading=lazy><figcaption>N5 · 两个边界件均显示"时基未读出"</figcaption></figure>
+<ul><li>☐ 两个文件都标"时基未读出"，且份数统计里能看到 2</li></ul>
+<p>&gt; 判据依据：<code>probeSeries</code> 只读首列推时基，落在 10—7200s 之外或整体超过 4 MB 上限即放弃解析（上限见 <code>SessionsPage.tsx</code> 的 <code>probeSeries</code>）。</p>
+<h3>N7 · JSON 采样序列本版不支持</h3>
+<p><b>操作</b>：新建会话 <code>M-N7</code>，把 <b>X4</b>（JSON）拖进近红外框。</p>
+<p><b>预期</b>：显示「时基未读出」——本版按分隔符文本解析首列，JSON 结构读不出。<b>这是如实限制，不是崩溃</b>：不报错、不上传、不影响其他素材登记。</p>
+<p><b>实测</b>：份数 1 · 时基未读出 1。</p>
+<figure><img src="验证手册截图/N7_01_register.png" alt="N7 · JSON 导出件显示"时基未读出"（本版已知限制）" loading=lazy><figcaption>N7 · JSON 导出件显示"时基未读出"（本版已知限制）</figcaption></figure>
+<ul><li>☐ 界面稳定，标注为"时基未读出"，并在报告/手册里作为已知限制申报（见本手册第七章）</li></ul>
+<h3>N8 · 已归档会话只读</h3>
+<p><b>操作</b>：任务台切「已归档」筛选，找到种子会话 <code>SES-2026-1017-V31</code>（离线导入 · 2 份 · 含扩展信号）。</p>
+<p><b>预期</b>：行内「离线分析」按钮为<b>禁用灰态</b>；若绕过界面直接调起批接口，服务端返回 <b>409</b>（归档只读）。</p>
+<figure><img src="验证手册截图/N8_01_archived.png" alt="N8 · 已归档会话的"离线分析"为禁用态" loading=lazy><figcaption>N8 · 已归档会话的"离线分析"为禁用态</figcaption></figure>
+<ul><li>☐ 按钮禁用；☐ 直连返回 409</li></ul>
+<p>&gt; <b>顺带纠正一处文档表述</b>：<code>prototype-lite/README.md</code> 原先写"也可用种子会话 SES-2026-1017-V31 点离线分析"，该会话状态是 closed，点不动。已按 N8 的实测结论改正。</p>
+<h3>N9 · 扩展信号封顶口径四处一致（<b>Q15 的核心用例</b>）</h3>
+<p><b>操作</b>：跑完 C3 同构会话（V1 + E1 + E2），然后依次核对四处。</p>
+<div class="tablewrap"><table><thead><tr><th>处</th><th>核对点</th><th>实测</th></tr></thead><tbody><tr><td>① 结果页</td><td>两份扩展素材切片卡都带「结论上限」说明；封顶事件 2 条，候选规则层为空、最高 ALERT（无 ESCALATED）</td><td>全部 true</td></tr><tr><td>② CSV</td><td>表头含 <code>asset</code> 列；<code>outcome=trend_only</code> 的行数 == 扩展事件数</td><td>13 行，其中 trend_only 2 行</td></tr><tr><td>③ 报告</td><td>提到扩展信号封顶口径的章节</td><td>slices（第二章）· anomaly（第三章）· attribution（第四章）三处都有</td></tr><tr><td>④ 导出件</td><td>含「趋势型条目」措辞；含「不出心理归因 / 不含心理归因」；未发布时带水印</td><td>true / true / 「草稿 · 未经复核审批」</td></tr></tbody></table></div>
+<figure><img src="验证手册截图/N9_02_n9_matrix.png" alt="N9 · 报告页「精度受限」块与第二章逐份列示（四处一致中的 ③）" loading=lazy><figcaption>N9 · 报告页「精度受限」块与第二章逐份列示（四处一致中的 ③）</figcaption></figure>
+<ul><li>☐ ①②③ 四处全部一致，<b>任何一处口径不同即判不通过</b>（这是最容易在正式实现时被改崩的地方）</li></ul>
+<hr>
+<h2>五、招标条目覆盖核对表</h2>
+<p>拿这张表逐条打勾，就是"符合原招标文件需求"的正面回答。</p>
+<div class="tablewrap"><table><thead><tr><th>条目</th><th>招标原文要点（逐字摘录见 <code>01_精简版调研报告.md</code> §一）</th><th>用哪个用例验</th><th>证据</th><th>结论</th></tr></thead><tbody><tr><td>28.01</td><td>「不限于语音、视频、近红外、毫米波等单一或多种信号的输入」+ 捕捉言语/姿态/手部/表情/生理异常 + 分析心理原因</td><td>C1（音视频）+ C3（音视频+近红外+毫米波）+ C5（仅扩展）</td><td><code>C3_01_register.png</code>、<code>C3_04_result_top.png</code>、<code>C1_08_attribution.png</code></td><td>✅ 四类信号文件级全通路</td></tr><tr><td>28.02</td><td>分角色识别 + 话题提取 + 语义影响值</td><td>C1 第 8—9 步</td><td><code>C1_09_impacts.png</code>、<code>C1_10_transcript.png</code></td><td>✅ 置信度/边界依据/四维影响值三项齐</td></tr><tr><td>28.03</td><td>语音输入 → 语音特征、言语表达异常 → 心理原因</td><td>C1 + C2</td><td><code>C2_06_slices.png</code>、<code>C1_07_anomalies.png</code></td><td>✅</td></tr><tr><td>28.04</td><td>不限信号输入，六类异常 + 背后心理原因</td><td>C1（6/6 命中）+ C4（多文件）</td><td><code>C1_05_result_top.png</code>、<code>C4_05_slices.png</code></td><td>✅ 归因含反事实与免责常驻</td></tr><tr><td>28.05</td><td>输入：语音 / 语音+视频 / 多模态</td><td>C2（纯音频 2/6）、C1（音视频 6/6）、C3（+扩展趋势层）</td><td>三个用例的汇总屏</td><td>✅ 三种组合各有实例</td></tr><tr><td>28.06</td><td>方法：可单模态或多模态</td><td>C2 单模态裁剪 + C4 多文件融合 + C5 仅扩展裁撤</td><td><code>C2_05_modality.png</code>、<code>C4_03_progress.png</code>、<code>C5_06_suppressed.png</code></td><td>✅ 缺失显性标注、不静默跳过</td></tr><tr><td>28.07</td><td>异常类型包括但不限于六类，提供心理原因分析</td><td>C1 异常表 + N9 封顶口径</td><td><code>C1_07_anomalies.png</code>、<code>N9_02_n9_matrix.png</code></td><td>✅ 六类可命中；扩展信号按封顶口径单列</td></tr><tr><td>28.08</td><td>「主要考察参赛方提供的行为异常检测能力」</td><td><b>本手册第七章现场演练</b>（形态由"边采集边看"改为"现场上传、离线出报告"）</td><td>演练动线 + C1—C5 全链截图</td><td>🟡 能力覆盖，<b>形态变更需主动申报口径</b></td></tr></tbody></table></div>
+<p>&gt; 28.08 的诚实说法：招标只要求考察"行为异常检测能力"，没规定必须实时。精简版把实测改成现场上传素材离线出全套结论，检测能力项不减，但演示冲击力从"边谈边看"变成"分钟级出全套报告"——<b>这一条要在比选材料里主动写清楚，不要等评委问</b>。</p>
+<hr>
+<h2>六、量化指标核对表（Q1—Q15）</h2>
+<p>招标原文<b>没有任何量化门槛</b>（无准确率、无时延、无部署形态要求）。指标全部是我们主动定义的口径，每项只允许【文献参考水平】或【实测现场标定】两类标签，<b>未经复算的单值不写入标书</b>。本表说明哪些能靠这份手册当场验、哪些不能。</p>
+<div class="tablewrap"><table><thead><tr><th>#</th><th>指标</th><th>本轮（P0 原型）能否现场验</th><th>怎么验 / 为什么不能</th></tr></thead><tbody><tr><td>Q1</td><td>语音识别质量 WER</td><td>❌</td><td>原型无真实 ASR，转写来自演示脚本。P1 接 openSMILE + Whisper/FunASR 后用招标素材现场标定</td></tr><tr><td>Q2</td><td>分角色识别 DER</td><td>❌</td><td>同上，P1 接 pyannote 后可复算</td></tr><tr><td>Q3</td><td>话题边界 P/R/F1</td><td>❌</td><td>需人工标注集；界面侧可验"边界判定依据是否逐条给出"（C1 第 8 步）</td></tr><tr><td>Q4</td><td>异常检出率</td><td>❌</td><td>需 ≥50 段标注集（P2）</td></tr><tr><td>Q5</td><td>误报率</td><td>❌</td><td>依赖复核闭环数据；精简版由报告审批流的"驳回+理由"承接（C1 第 12—13 步可验机制在）</td></tr><tr><td>Q6</td><td>标注一致率 Kappa</td><td>❌</td><td>需双人标注（P2）</td></tr><tr><td>Q7</td><td>归因可采纳率</td><td>🟡 机制可验</td><td>审批环节"认可/驳回"天然产生该数据，C1 可验流程通</td></tr><tr><td>Q8</td><td>六类异常覆盖</td><td>✅</td><td>C1 汇总屏 6/6 + 异常表逐类核对</td></tr><tr><td>Q9</td><td>单素材分析时长</td><td>✅ 口径可验</td><td>156s 素材批分析在原型内 &lt;3min 走完（C1 第 4—5 步计时）；正式实现按 1× 视频时长 CPU 预算另标</td></tr><tr><td>Q10</td><td>报告生成时长</td><td>✅</td><td>分析完成即自动起草（C1 第 10 步）</td></tr><tr><td>Q11</td><td>可追溯率</td><td>✅</td><td>每条告警都有 L1 观察层证据 + 文献字段；未登记规则显性标出（C1 第 7 步逐条点开）</td></tr><tr><td>Q12</td><td>审计完整率</td><td>✅</td><td>导出件与 CSV 的 <code>seq</code> / <code>prev_hash</code> 链，<code>npm run verify</code> E 组断言复算缺失=0；N1/N2/N3/N8 的 403/422/409 也留痕</td></tr><tr><td>Q13</td><td>素材级参与率</td><td>✅</td><td>C3（3/3）、C4（4/4）、C5（2/2）——登记数 == 切片数</td></tr><tr><td>Q14</td><td>素材级可追溯率</td><td>✅</td><td>CSV <code>asset</code> 列 + 报告附表 A 逐份列文件名（C1 第 15 步、C4 判据）</td></tr><tr><td>Q15</td><td>扩展信号封顶一致率</td><td>✅</td><td><b>N9 四处一致</b>（结果页 / CSV / 报告 / 导出件）</td></tr></tbody></table></div>
+<ul><li>☐ 已向需求方说明：Q1—Q6 属 P1/P2 现场标定项，P0 不承诺数值，只承诺口径与可复算路径</li></ul>
+<hr>
+<h2>七、28.08 现场实测演练动线（约 3 分钟）</h2>
+<p>现场用招标方提供的素材，按这条动线走。前提：素材已拷到本机、dev server 已起、用分析师席位登录。</p>
+<div class="tablewrap"><table><thead><tr><th>时</th><th>动作</th><th>说什么</th></tr></thead><tbody><tr><td>0:00</td><td>席位登录（W-02 / 1234）</td><td>"工作台只保留离线分析闭环，实时监看与跨终端协同不在精简版范围。"</td></tr><tr><td>0:15</td><td>新建会话，把招标方的录像拖进「主信号·视频」、录音拖进「主信号·音频」、两份生理导出表分别拖进近红外/毫米波</td><td>"四类信号分框登记，音视频为主，扩展信号非必填；但<b>登记进来的每一份都会参与分析</b>，只在浏览器本机读元数据，不上传内容。"</td></tr><tr><td>0:45</td><td>念计数行</td><td>指着「主信号 N 份 / 扩展信号 M 份」和封顶口径那句，<b>主动说出</b>"扩展信号结论只到生理趋势层，不进升级、不出心理归因"</td></tr><tr><td>1:00</td><td>点「离线分析」</td><td>"逐素材各跑各的解析链：视频 6 步、音频 5 步、近红外/毫米波各 4 步，最后一步会话级融合。"</td></tr><tr><td>1:40</td><td>结果页汇总 → 模态可用性</td><td>"六路由素材类型决定，缺的显性标'不可用'，不填 0 值。"</td></tr><tr><td>2:00</td><td>点开一条 ESCALATED 异常</td><td>"三级归因：观察层是可核对的时间窗与现象；规则层给规则号和文献；结论层是<b>模型推断</b>，带反事实与免责声明，不是临床诊断。"</td></tr><tr><td>2:20</td><td>点开一张扩展信号切片</td><td>"这两路只出趋势，候选规则层为空，最高 ALERT——这是刻意的封顶，不做跨模态互为校验。"</td></tr><tr><td>2:40</td><td>报告页 → 提交 → 换复核席审批 → 发布 → 导出</td><td>"分析师不能自批，服务端校验；发布件去掉草稿水印，附表 A 逐份列出素材文件名，可直接打印存 PDF 归档。"</td></tr></tbody></table></div>
+<p><b>现场风险预案</b></p>
+<div class="tablewrap"><table><thead><tr><th>风险</th><th>处置</th></tr></thead><tbody><tr><td>招标方素材时长读不出来（容器异常）</td><td>改拖 <code>public/testkit/</code> 自带素材，并当场说明"读不出就显示时基未读出，不猜"（N5 就是这个口径）</td></tr><tr><td>素材是 JSON 导出件</td><td>直说不支持并展示 N7，把它作为后续项（列名/单位映射配置在 P1）</td></tr><tr><td>采样序列 &gt; 4 MB</td><td>说明上限与原因（只读首列，不整体解析），当场用 X3 演示"时基未读出"</td></tr><tr><td>评委要求看实时</td><td>回答口径：实时监看属完整版六终端路线，两版同源、数据契约一致，可另约演示；精简版按离线实测交付</td></tr><tr><td>断网</td><td>全流程不依赖网络（素材本机读取、mock 引擎在本进程内），提前确认 5185 端口可访问即可</td></tr></tbody></table></div>
+<hr>
+<h2>八、如实披露（验证时请一并说明，不要藏）</h2>
+<ol><li><b>原型无真实推理</b>：所有判定来自演示脚本回放（D 级演示占位）。截图里的置信度、影响值、事件号是脚本产出的<b>结构示例</b>，不是模型精度。<b>D 级演示占位数值任何场合不得作为依据。</b></li><li><b>规则库为占位</b>：8 条脚本候选规则 + R-PSY-22 文献字段是占位，投标截止（2026-10-31）前替换为 <code>01_精简版调研报告.md</code> §3.1 的真实文献或标"待审"。</li><li><b>扩展信号是文件级导入</b>：无硬件在线接入、无采样级时钟同步、无个体基线标定；结论封顶在生理趋势层。显著性判据（升幅 &gt;12% 且末段 6/10 窗维持 60%）与 <code>confidence</code> 重定义属<b>自定义口径</b>（出处目录 C 级，不引文献）。接口契约与后续硬件候选见 <code>06_多信号源上传与硬件接入说明.md</code>。</li><li><b>JSON 采样序列不支持</b>（N7）：本版按分隔符文本解析首列；JSON、Parquet 等结构化导出件在 P1 的列名/单位映射里补。</li><li><b>采样序列解析上限 4 MB</b>（N5）：超限整体不解析，显示"时基未读出"。</li><li><b>会话时长取"最长素材"，事件时间戳按脚本 0—152s 下发</b>（附录 X1 用例）：两个口径不同，看时长时须注意。</li><li><b>影响值 [0,1] 是相对量，不可跨会话比较</b>。</li><li><b>精简版不含实时监看与跨终端协同</b>：28.08 实测形态改为现场上传离线出报告，<b>属主动申报的形态变更</b>。</li><li><b>会话号与报告号会重复</b>：<code>SES-&lt;日期&gt;-N&lt;序号&gt;</code> 按当前会话列表长度生成，报告号同理按报告列表长度生成。<code>npm run verify</code> 与各用例之间引擎会恢复出厂状态，序号因此回到同一个值——本手册 C1—C5 都出现 <code>SES-20261022-N07</code> 与 <code>RP-2026-05</code>，<b>不是同一个会话/同一份报告</b>。手动逐个跑时，序号会随列表增长而递增。</li></ol>
+<hr>
+<h2>九、附录</h2>
+<h3>9.1 补充用例（可选）</h3>
+<div class="tablewrap"><table><thead><tr><th>用例</th><th>素材</th><th>验什么</th><th>预期</th></tr></thead><tbody><tr><td>附录 A</td><td>X1（40s 短素材）</td><td>素材时长 &lt; 脚本时间轴</td><td>会话时长取最长素材，事件时间戳仍按 0—152s 下发；两口径不同须看清（第 8 章第 6 条）</td></tr><tr><td>附录 B</td><td>E5（.tsv 制表符分隔）</td><td>厂商导出件形态</td><td>与 E1 同样读得出时基与行数（2 Hz / 79 行），可直接替换 C3 里的近红外位</td></tr></tbody></table></div>
+<h3>9.2 截图与取证重跑</h3>
+<p>截图不是贴图，是脚本跑真实链路时逐屏拍的；数字是服务端当场返回后打印的。要重跑：</p>
+<pre><code>cd /Users/admin/Downloads/标书/精简版/prototype-lite
+npm run dev &amp;                       # 先起 dev server（5185）
+node scripts/testkit-shots.mjs      # 全量 13 个用例，约 8 分钟
+node scripts/testkit-shots.mjs --only=C1     # 只跑单个用例（逗号分隔可多个）</code></pre>
+<p>产物写回 <code>../验证手册截图/</code>：PNG + <code>取证记录.md</code>（汇总）+ <code>取证记录/&lt;用例&gt;.md</code>（分用例）+ <code>_shotlog/</code>（每次注入的原始片段与告警）。</p>
+<p>回归断言（与本手册互补，覆盖面更广但无画面）：</p>
+<pre><code>cd /Users/admin/Downloads/标书/精简版/prototype-lite
+npm run verify      # 49 条需求覆盖断言
+npm run demo-multi  # 用 public/demo 四份真实文件跑一遍完整批分析，打印会话号与结果页地址</code></pre>
+<h3>9.3 本手册的 HTML 版</h3>
+<pre><code>cd /Users/admin/Downloads/标书/精简版
+node tools/md2html.mjs 07_精简版验证操作手册.md   # 生成同名 HTML，截图按相对路径引用</code></pre>
+<p>&gt; 改 md 后必须重跑这一句，否则两份不一致。截图目录 <code>验证手册截图/</code> 与本文件同级，整体拷走即可离线看。</p>
+</main></body></html>

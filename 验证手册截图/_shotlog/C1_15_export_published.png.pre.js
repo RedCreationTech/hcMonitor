@@ -1,0 +1,3 @@
+(async()=>{try{const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+  const setVal=(el,v)=>{const p=el.tagName==='TEXTAREA'?window.HTMLTextAreaElement.prototype:window.HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(p,'value').set.call(el,v);el.dispatchEvent(new Event('input',{bubbles:true}));};await sleep(600);const n=[...document.querySelectorAll('h3')].find((x)=>x.textContent.includes('附表 A'));if(n)document.scrollingElement.scrollTop=n.offsetTop-8;return '附表 A';return 'ok'}catch(e){return 'ERR:'+(e&&e.message?e.message:String(e))}})()
