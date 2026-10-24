@@ -71,8 +71,11 @@ def _hr_rmssd(seg: np.ndarray, fs: float) -> tuple[float, float]:
     return hr, rmssd
 
 
-def run(video_path: Path, out_dir: Path) -> dict:
-    """整段视频 rPPG 分析，落盘波形/心率 CSV，返回契约形状字典。"""
+def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
+    """整段视频 rPPG 分析，落盘波形/心率 CSV，返回契约形状字典。
+
+    progress_cb(done, total)：帧循环内每 300 帧回报一次。
+    """
     video_path = Path(video_path)
     rppg_dir = Path(out_dir) / "rppg"
     rppg_dir.mkdir(parents=True, exist_ok=True)
@@ -82,6 +85,7 @@ def run(video_path: Path, out_dir: Path) -> dict:
     if not cap.isOpened():
         raise RuntimeError(f"无法打开视频: {video_path}")
     native_fps = float(cap.get(cv2.CAP_PROP_FPS)) or FPS
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
 
     fm = mp.solutions.face_mesh.FaceMesh(
         refine_landmarks=True, max_num_faces=1,
@@ -100,6 +104,8 @@ def run(video_path: Path, out_dir: Path) -> dict:
         if not ok:
             break
         idx += 1
+        if progress_cb and total_frames and idx % 300 == 0:
+            progress_cb(idx, total_frames)
         if idx % SKIP:
             continue
         t = idx / native_fps

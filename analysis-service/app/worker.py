@@ -19,8 +19,9 @@ from .pipeline import preprocess, fusion, attribution
 from .pipeline.events import RawEvent
 from .seed import now_str
 
-STEPS_VIDEO = ["解封装与时长校验", "人脸跟踪与 AU 提取", "姿态与手部关键点",
-               "rPPG 生理趋势", "语音通道转写 + 分角色", "声学特征与言语异常"]
+# 步骤标签按真实执行顺序排列（进度广播按模块边界逐段提交，长步骤内由 progress_cb 细化）
+STEPS_VIDEO = ["解封装与时长校验", "语音通道转写 + 分角色", "声学特征与言语异常",
+               "人脸跟踪与 AU 提取（含姿态/手部）", "rPPG 生理趋势"]
 STEPS_AUDIO = ["VAD 分段", "ASR 转写", "说话人分离与轮次对齐", "标点与话题候选", "声学特征与言语异常"]
 STEPS_EXT = ["采样序列解析", "重采样与质量门", "趋势提取", "封顶事件判定"]
 AUDIO_MODALITIES = ["voice", "semantic"]
@@ -57,13 +58,18 @@ def _build_steps(assets: list[dict]) -> list[dict]:
     return steps
 
 
-def _commit_progress(session, steps, done_idx, broadcast):
+def _commit_progress(store, session, steps, done, broadcast):
+    """done 可为小数：已完成步骤数（含进行中的小数部分）。每步的 progress 字段同步，
+    前端据 st.progress <= job.progress 推导完成态——进行中的步骤也会按帧级回调走动。
+    注意：session 深拷贝自 store，必须 upsert 后再广播，否则服务端状态不更新。"""
     total = len(steps)
     for i, st in enumerate(steps):
-        st["progress"] = 100 if i < done_idx else 0
-    session["offline_job"] = {"progress": round(done_idx / total * 100),
-                              "stage": steps[min(done_idx, total - 1)]["stage"],
+        st["progress"] = min(100, max(0, round((done - i) * 100)))
+    cur = min(int(done), total - 1)
+    session["offline_job"] = {"progress": min(100, round(done / total * 100)),
+                              "stage": steps[cur]["stage"] if done < total else "完成",
                               "steps": steps}
+    store.upsert_session(session)
     broadcast()
 
 
@@ -96,10 +102,25 @@ def _run(store, sid: str, broadcast):
             try:
                 if kind in ("video", "audio"):
                     wav = preprocess.audio_to_wav(path)
+                    if not a.get("duration_seconds"):
+                        # 早期上传的素材登记时长可能为 0（webm 无时长头）：用转码 WAV 实测回填
+                        import wave
+                        try:
+                            with wave.open(str(wav)) as w:
+                                a["duration_seconds"] = int(round(w.getnframes() / w.getframerate()))
+                        except Exception:
+                            pass
                     from .pipeline import speech, acoustic, semantic
+                    if kind == "video":
+                        # 步骤1 解封装完成
+                        session = store.get_session(sid)
+                        _commit_progress(store, session, steps, done + 1, broadcast)
                     if not audio_done:
                         r = speech.run(wav, a_dir)
                         turns = r["turns"]
+                        if kind == "video":
+                            session = store.get_session(sid)
+                            _commit_progress(store, session, steps, done + 2, broadcast)
                         r2 = acoustic.run(wav, turns, a_dir)
                         r3 = semantic.run(turns, a_dir)
                         impacts = r3["impacts"]
@@ -116,9 +137,26 @@ def _run(store, sid: str, broadcast):
                         all_events += r2["anomalies"]
                     n_steps = len(STEPS_VIDEO if kind == "video" else STEPS_AUDIO)
                     if kind == "video":
+                        # 步骤3 声学完成；步骤4-5 由帧级回调细化（720p 视频视觉段可能数分钟）
+                        session = store.get_session(sid)
+                        _commit_progress(store, session, steps, done + 3, broadcast)
                         from .pipeline import vision, rppg
-                        rv = vision.run(path, a_dir)
-                        rr = rppg.run(path, a_dir)
+
+                        def _vis_cb(d, t, base=done + 3):
+                            session = store.get_session(sid)
+                            _commit_progress(store, session, steps,
+                                             base + min(0.99, d / max(t, 1)), broadcast)
+
+                        rv = vision.run(path, a_dir, progress_cb=_vis_cb)
+                        session = store.get_session(sid)
+                        _commit_progress(store, session, steps, done + 4, broadcast)
+
+                        def _rppg_cb(d, t, base=done + 4):
+                            session = store.get_session(sid)
+                            _commit_progress(store, session, steps,
+                                             base + min(0.99, d / max(t, 1)), broadcast)
+
+                        rr = rppg.run(path, a_dir, progress_cb=_rppg_cb)
                         for ev in rv["anomalies"] + rr["anomalies"]:
                             ev.asset_id = a["id"]
                         all_events += rv["anomalies"] + rr["anomalies"]
@@ -128,6 +166,10 @@ def _run(store, sid: str, broadcast):
                         primary_kind = primary_kind or "video"
                         suppressed = []
                     else:
+                        # 音频：speech 覆盖步骤1-4，acoustic 第 5 步（speech 后先提交一次）
+                        session = store.get_session(sid)
+                        _commit_progress(store, session, steps,
+                                         done + (n_steps - 1), broadcast)
                         quality, qnote = "ok", "质量达标"
                         mods = AUDIO_MODALITIES
                         primary_kind = primary_kind or "audio"
@@ -177,7 +219,7 @@ def _run(store, sid: str, broadcast):
                 store.audit("引擎", "asset.error", f"{sid}/{a['name']}")
             done += len(STEPS_VIDEO if kind == "video" else STEPS_AUDIO if kind in ("video", "audio") else STEPS_EXT) if kind in ("video", "audio") else len(STEPS_EXT)
             session = store.get_session(sid)
-            _commit_progress(session, steps, done, broadcast)
+            _commit_progress(store, session, steps, done, broadcast)
 
         # ── 会话级融合与归因 ─────────────────────────────────────
         fused = fusion.fuse(all_events, sid)
@@ -204,7 +246,7 @@ def _run(store, sid: str, broadcast):
                     s["event_ids"].append(d["id"])
         done = len(steps) - 0
         session = store.get_session(sid)
-        _commit_progress(session, steps, len(steps), broadcast)
+        _commit_progress(store, session, steps, len(steps), broadcast)
 
         peak = "red" if any(x["severity"] == "ESCALATED" for x in anomalies) else \
                "orange" if any(x["severity"] in ("ALERT",) for x in anomalies) else \
@@ -214,7 +256,7 @@ def _run(store, sid: str, broadcast):
             finished_at=now_str(), asset_kind=primary_kind or "audio",
             assets=[{**a} for a in assets], slices=slices,
             modality_available=session_mods or AUDIO_MODALITIES,
-            duration_seconds=duration or (turns[-1]["ts"] if turns else 0),
+            duration_seconds=int(round(duration or (turns[-1]["ts"] if turns else 0))),
             turns=turns, anomalies=anomalies, impacts=impacts,
             suppressed=suppressed_all, report_id=report_id,
             pipeline=f"{PIPELINE_VERSION}（真实算法链）",

@@ -92,6 +92,12 @@ def _startup():
         for s in seed_sessions():
             store.upsert_session(s)
         store.audit("系统", "seed", "sessions")
+    else:
+        # 上次进程被杀会残留 offline_job 标志：启动时一律清零（作业线程已不存在）
+        for s in store.sessions():
+            if s.get("offline_job"):
+                s["offline_job"] = None
+                store.upsert_session(s)
 
 
 # ── 身份 ─────────────────────────────────────────────────────────────
@@ -224,6 +230,10 @@ def analyze(sid: str, actor: str = "分析师 W-02"):
         raise HTTPException(409, "会话已归档只读：离线批分析须在归档前完成")
     if session.get("offline"):
         raise HTTPException(409, "本会话已有分析产物")
+    # 僵死恢复：服务重启会杀死作业线程，残留的 offline_job 标志并非真在跑——清掉重起
+    if session.get("offline_job") and not worker.is_running(sid):
+        session["offline_job"] = None
+        store.upsert_session(session)
     if not worker.start(store, sid, broadcast):
         raise HTTPException(409, "批分析已在进行中")
     store.audit(actor, "analyze.offline", sid)

@@ -20,10 +20,10 @@ def audio_to_wav(path: str | Path) -> Path:
     dst = src.with_name(src.stem + ".16k.wav")
     if dst.exists() and dst.stat().st_size > 0:
         return dst                                  # 缓存命中
-    cmd = [FFMPEG, "-hide_banner", "-y",
+    cmd = [FFMPEG, "-hide_banner", "-y", "-nostdin",
            "-i", str(src), "-vn", "-ac", "1", "-ar", str(SR),
            "-acodec", "pcm_s16le", str(dst)]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
     if proc.returncode != 0 or not dst.exists():
         dst.unlink(missing_ok=True)
         raise RuntimeError(

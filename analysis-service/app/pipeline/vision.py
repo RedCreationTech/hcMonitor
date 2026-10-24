@@ -119,8 +119,11 @@ def _runs(mask: list[bool], gap_tol: int = 0) -> list[tuple[int, int]]:
     return runs
 
 
-def run(video_path: Path, out_dir: Path) -> dict:
-    """分析整段视频，落盘时序 CSV，返回契约形状字典（含 RawEvent 列表）。"""
+def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
+    """分析整段视频，落盘时序 CSV，返回契约形状字典（含 RawEvent 列表）。
+
+    progress_cb(done, total)：帧循环内每 300 帧回报一次，供服务层做步骤级进度。
+    """
     video_path = Path(video_path)
     vis_dir = Path(out_dir) / "vision"
     vis_dir.mkdir(parents=True, exist_ok=True)
@@ -131,6 +134,7 @@ def run(video_path: Path, out_dir: Path) -> dict:
         raise RuntimeError(f"无法打开视频: {video_path}")
     native_fps = float(cap.get(cv2.CAP_PROP_FPS)) or FPS
     step = max(1, int(round(native_fps / FPS)))      # 目标 25fps 抽帧
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
 
     fm = mp.solutions.face_mesh.FaceMesh(
         refine_landmarks=True, max_num_faces=1,
@@ -154,6 +158,8 @@ def run(video_path: Path, out_dir: Path) -> dict:
         if not ok:
             break
         idx += 1
+        if progress_cb and total_frames and idx % 300 == 0:
+            progress_cb(idx, total_frames)
         if idx % step:
             continue
         t = idx / native_fps
