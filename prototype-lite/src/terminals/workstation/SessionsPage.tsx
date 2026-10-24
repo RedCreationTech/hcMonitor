@@ -203,9 +203,16 @@ export function SessionsPage() {
               <span className="row" style={{ gap: 4 }}>
                 {r.source === 'imported' &&
                   (r.offline_job ? (
-                    <Tag color="processing" className="mono" style={{ fontSize: 11 }}>
-                      {r.offline_job.progress}% · {r.offline_job.stage.slice(0, 12)}
-                    </Tag>
+                    <Button
+                      size="small"
+                      type="link"
+                      title="批分析进行中：点击查看实时进度"
+                      onClick={() => nav(`/t/workstation/offline/${r.id}`)}
+                    >
+                      <Tag color="processing" className="mono" style={{ fontSize: 11 }}>
+                        {r.offline_job.progress}% · {r.offline_job.stage.slice(0, 12)}
+                      </Tag>
+                    </Button>
                   ) : r.offline ? (
                     <Button size="small" type="link" onClick={() => nav(`/t/workstation/offline/${r.id}`)}>查看结果</Button>
                   ) : (
@@ -217,7 +224,7 @@ export function SessionsPage() {
                       onClick={() => analyze(r.id)}
                     >离线分析</Button>
                   ))}
-                <Button size="small" type="link" onClick={() => nav('/t/workstation/reports')}>报告</Button>
+                <Button size="small" type="link" title="按会话锁定报告：批分析未完成时报告尚未生成" onClick={() => nav(`/t/workstation/reports?session=${r.id}`)}>报告</Button>
               </span>
             ),
           },

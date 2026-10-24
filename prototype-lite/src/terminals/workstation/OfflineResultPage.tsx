@@ -200,7 +200,7 @@ export function OfflineResultPage() {
         <Tag color="purple">离线导入 · 非实时</Tag>
         <span className="grow" />
         <Button size="small" onClick={exportCsv} disabled={!r}>导出 CSV（含裁撤条目）</Button>
-        <Button size="small" type="primary" onClick={() => nav('/t/workstation/reports')} disabled={!r}>查看报告</Button>
+        <Button size="small" type="primary" onClick={() => nav(`/t/workstation/reports?session=${session.id}`)} disabled={!r}>查看报告</Button>
       </div>
 
       <Alert
@@ -443,7 +443,7 @@ export function OfflineResultPage() {
           detail && (
             <div className="row">
               <Button type="primary" onClick={() => setCausal(detail)}>跨模态因果链</Button>
-              <Button onClick={() => { setDetail(null); nav('/t/workstation/reports'); }}>前往报告</Button>
+              <Button onClick={() => { setDetail(null); nav(`/t/workstation/reports?session=${session.id}`); }}>前往报告</Button>
               <Button onClick={() => setDetail(null)}>关闭</Button>
             </div>
           )

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { App, Alert, Button, Empty, Input, Segmented, Table, Tag } from 'antd';
+import { App, Alert, Button, Card, Empty, Input, Progress, Segmented, Table, Tag } from 'antd';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApi, useStream } from '../../api/useStream';
 import type { Report, ReportStatus } from '../../shared/types';
 import { roleLabel, useActor } from '../../shells/session';
@@ -28,6 +29,11 @@ const STEP_TAG: Record<ReportStatus, { text: string; color: string }> = {
 export function ReportsPage() {
   const { message } = App.useApp();
   const post = useApi();
+  const nav = useNavigate();
+  const [params] = useSearchParams();
+  /** 会话锁定：从任务台「报告」/结果页带 ?session= 进入时，只显示该会话的报告；
+   *  报告尚未生成时给占位与实时进度，绝不错显其它会话的报告（信息不全的根因修复） */
+  const sessionParam = params.get('session');
   const { actor } = useActor();
   const { state } = useStream('workstation');
   const [id, setId] = useState<string | null>(null);
@@ -37,7 +43,8 @@ export function ReportsPage() {
   const [status, setStatus] = useState<'all' | ReportStatus>('all');
   const [kw, setKw] = useState('');
 
-  const reports = (state?.reports ?? []).filter((r) => {
+  const reportsAll = state?.reports ?? [];
+  const reports = reportsAll.filter((r) => {
     if (status !== 'all' && r.status !== status) return false;
     if (!kw.trim()) return true;
     const q = kw.trim().toLowerCase();
@@ -45,12 +52,19 @@ export function ReportsPage() {
       .filter(Boolean)
       .some((f) => f!.toLowerCase().includes(q));
   });
-  const current = reports.find((r) => r.id === id) ?? null;
+  // 锁定模式下选择不受筛选影响：直接在全量里找该会话的报告
+  const locked = sessionParam ? reportsAll.find((r) => r.session_id === sessionParam) ?? null : null;
+  const current = locked ?? (reports.find((r) => r.id === id) ?? null);
 
   useEffect(() => {
-    if (!id && reports.length) setId(reports[0].id);
+    if (sessionParam) {
+      // 锁定模式：报告出现即自动选中；未生成时保持空选中（占位卡会显示实时进度）
+      setId(locked ? locked.id : null);
+      return;
+    }
+    if (!id && reportsAll.length) setId(reportsAll[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reports.length]);
+  }, [reportsAll.length, sessionParam]);
 
   useEffect(() => {
     if (current) setDraft(current);
@@ -121,6 +135,14 @@ export function ReportsPage() {
     <div className="page">
       <div className="page-head">
         <h3>报告与审批</h3>
+        {sessionParam && (
+          <Tag
+            color="blue"
+            closable
+            onClose={() => nav('/t/workstation/reports')}
+            title="按会话锁定中：点击 x 解除锁定查看全部报告"
+          >会话锁定 {sessionParam}</Tag>
+        )}
         <Segmented
           value={status}
           onChange={(v) => setStatus(v as 'all' | ReportStatus)}
@@ -171,7 +193,36 @@ export function ReportsPage() {
         ]}
       />
 
-      {!current ? (
+      {sessionParam && !current ? (
+        /* 会话锁定但报告尚未生成：给实时进度占位，绝不错显其它会话的报告 */
+        (() => {
+          const s = state?.sessions.find((x) => x.id === sessionParam);
+          return (
+            <Card size="small" style={{ marginTop: 14 }} title={`会话 ${sessionParam} 的报告尚未生成`}>
+              {s?.offline_job ? (
+                <>
+                  <div className="sub" style={{ marginBottom: 8, fontSize: 12 }}>
+                    离线批分析进行中，完成后将自动起草报告（进度经 WS 实时推送）：
+                  </div>
+                  <Progress percent={s.offline_job.progress} status="active" size="small" />
+                  <div className="sub mono" style={{ marginTop: 6, fontSize: 12 }}>
+                    当前阶段：{s.offline_job.stage}
+                  </div>
+                </>
+              ) : s && !s.offline ? (
+                <div className="sub" style={{ fontSize: 12 }}>
+                  该会话尚未发起离线批分析：报告由批分析产物自动起草，起批后回到本页即可看到。
+                </div>
+              ) : (
+                <div className="sub" style={{ fontSize: 12 }}>报告正在生成中，请稍候…</div>
+              )}
+              <Button size="small" style={{ marginTop: 12 }} onClick={() => nav(`/t/workstation/offline/${sessionParam}`)}>
+                前往分析进度页
+              </Button>
+            </Card>
+          );
+        })()
+      ) : !current ? (
         <Empty description="未选择报告" style={{ marginTop: 24 }} />
       ) : (
         <div className="report-detail">
