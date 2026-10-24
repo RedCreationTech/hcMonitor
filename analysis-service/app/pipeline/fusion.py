@@ -13,13 +13,46 @@ MAIN_MODALITIES = ["voice", "semantic", "face", "pose", "hand"]
 ALL_MODALITIES = MAIN_MODALITIES + ["physio"]
 
 
+def _consolidate(events: list[RawEvent], gap_s: float = 60.0) -> list[RawEvent]:
+    """同型低频事件合并：同 (modality,type) 且相邻间隔 < gap 的 INFO/WARN 并为一条
+    （保留首个时间戳、并集证据窗、最大偏离，条数计入 metrics）。
+    ALERT/ESCALATED 逐条保留——升级相关的一条不吞。"""
+    out: list[RawEvent] = []
+    groups: dict[tuple, list[RawEvent]] = {}
+    for e in events:
+        if e.severity in ("INFO", "WARN"):
+            groups.setdefault((e.modality, e.type), []).append(e)
+        else:
+            out.append(e)
+    for (mod, typ), xs in groups.items():
+        xs.sort(key=lambda e: e.ts)
+        cur = None
+        for e in xs:
+            if cur and e.ts - cur.window[1] < gap_s:
+                cur.window = (cur.window[0], e.window[1])
+                cur.confidence = max(cur.confidence, e.confidence)
+                cur.deviation = max(cur.deviation, e.deviation)
+                cur.metrics["合并条数"] = (cur.metrics.get("合并条数", (1, ""))[0] + 1, "条")
+            else:
+                if cur:
+                    out.append(cur)
+                cur = RawEvent(ts=e.ts, modality=mod, type=typ, severity=e.severity,
+                               confidence=e.confidence, deviation=e.deviation,
+                               window=e.window, metrics=dict(e.metrics),
+                               asset_id=e.asset_id, cap_note=e.cap_note)
+        if cur:
+            out.append(cur)
+    return sorted(out, key=lambda e: e.ts)
+
+
 def fuse(events: list[RawEvent], session_id: str,
          window_s: int = FUSION_WINDOW_S) -> list[RawEvent]:
     """跨模态同窗聚合升级。封顶（cap_note 非空）事件不参与升级，保持原级。
 
-    升级语义：原事件全部保留（可逐条追溯），另产一条 ESCALATED 综合事件，
-    其 metrics 列出成员事件——「聚合」是新增结论，不吞掉单模态细节。
+    流程：同型低频合并降噪 → 45s 窗聚合升级。原事件全部保留（可逐条追溯），
+    另产 ESCALATED 综合事件，metrics 列出成员——「聚合」是新增结论，不吞细节。
     """
+    events = _consolidate(events)
     capped = [e for e in events if e.cap_note]
     fuseable = sorted((e for e in events if not e.cap_note), key=lambda e: e.ts)
 
