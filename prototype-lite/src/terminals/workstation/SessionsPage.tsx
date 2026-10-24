@@ -90,6 +90,7 @@ export function SessionsPage() {
         fd.append('file', p.file);
         fd.append('kind', p.ref.kind);
         fd.append('asset_id', p.ref.id);
+        fd.append('client_duration', String(p.ref.duration_seconds || 0));
         try {
           await uploadFile(`/sessions/${s.id}/assets`, fd);
           uploaded += 1;

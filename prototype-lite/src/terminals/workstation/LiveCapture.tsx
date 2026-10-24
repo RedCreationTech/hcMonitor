@@ -175,6 +175,7 @@ export function LiveCapture({ open, onClose }: { open: boolean; onClose: () => v
       fd.append('file', file);
       fd.append('kind', 'video');
       fd.append('asset_id', asset.id);
+      fd.append('client_duration', String(Math.round(seconds) || 0));
       try {
         await uploadFile(`/sessions/${s.id}/assets`, fd);
       } catch {

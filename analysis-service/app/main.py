@@ -136,7 +136,8 @@ def create_session(body: CreateSession, actor: str = "分析师 W-02"):
 
 @app.post("/v1/sessions/{sid}/assets")
 async def upload_asset(sid: str, file: UploadFile = File(...),
-                       kind: str = Form("video"), asset_id: str = Form(...)):
+                       kind: str = Form("video"), asset_id: str = Form(...),
+                       client_duration: int = Form(0)):
     session = store.get_session(sid)
     if not session:
         raise HTTPException(404, "会话不存在")
@@ -147,8 +148,10 @@ async def upload_asset(sid: str, file: UploadFile = File(...),
     dest = target / Path(file.filename).name
     data = await file.read()
     dest.write_bytes(data)
-    # 服务端实测元数据，纠正客户端探测
+    # 服务端实测元数据，纠正客户端探测；webm 分片无时长头时回退客户端计时
     dur, size = _probe(dest, kind)
+    if not dur:
+        dur = client_duration
     for a in session["assets"]:
         if a["id"] == asset_id:
             a["size_bytes"] = size
