@@ -15,45 +15,39 @@ ALL_MODALITIES = MAIN_MODALITIES + ["physio"]
 
 def fuse(events: list[RawEvent], session_id: str,
          window_s: int = FUSION_WINDOW_S) -> list[RawEvent]:
-    """跨模态同窗聚合升级。封顶（cap_note 非空）事件不升级，保持原级。"""
+    """跨模态同窗聚合升级。封顶（cap_note 非空）事件不参与升级，保持原级。
+
+    升级语义：原事件全部保留（可逐条追溯），另产一条 ESCALATED 综合事件，
+    其 metrics 列出成员事件——「聚合」是新增结论，不吞掉单模态细节。
+    """
     capped = [e for e in events if e.cap_note]
     fuseable = sorted((e for e in events if not e.cap_note), key=lambda e: e.ts)
 
     escalated: list[RawEvent] = []
-    consumed: set[int] = set()
     if fuseable:
         t0, t1 = fuseable[0].ts, fuseable[-1].ts
-        w = window_s
         start = t0
         while start <= t1:
-            end = start + w
-            in_win = [e for i, e in enumerate(fuseable)
-                      if start <= e.ts < end and id(e) not in consumed]
+            end = start + window_s
+            in_win = [e for e in fuseable if start <= e.ts < end]
+            # 成员资格：窗内既有主信号也有其他模态，且窗内主信号 ≥1
             mods = {e.modality for e in in_win}
             has_main = any(m in MAIN_MODALITIES for m in mods)
-            if len(mods) >= 2 and has_main and len(in_win) >= 2:
+            if len(in_win) >= 2 and len(mods) >= 2 and has_main:
                 missed = [m for m in ALL_MODALITIES if m not in mods]
-                ts = min(e.ts for e in in_win)
-                ev = RawEvent(
-                    ts=ts, modality="semantic", type="跨模态同窗聚合升级",
+                escalated.append(RawEvent(
+                    ts=min(e.ts for e in in_win), modality="semantic", type="跨模态同窗聚合升级",
                     severity="ESCALATED",
                     confidence=round(min(0.95, max(e.confidence for e in in_win) + 0.1), 2),
                     deviation=max(e.deviation for e in in_win),
                     window=(start, end),
                     metrics={"命中模态": ("+".join(sorted(mods)), "模态"),
                              "未命中": ("+".join(missed) if missed else "无", "模态"),
-                             "聚合条数": (len(in_win), "条")},
-                )
-                ev.matched = [f"R-Fusion-CrossModal"]           # 规则命中标记
-                ev.members = in_win                              # 成员事件（归因层展开）
-                escalated.append(ev)
-                for e in in_win:
-                    consumed.add(id(e))
+                             "聚合条数": (len(in_win), "条"),
+                             "成员": ("；".join(f"{e.type}@{int(e.ts)}s" for e in in_win), "")},
+                ))
             start = end
-    # 未被聚合提升的事件保持原样，封顶事件原样保留
-    rest = [e for e in fuseable if id(e) not in consumed]
-    out = rest + escalated + capped
-    return sorted(out, key=lambda e: e.ts)
+    return sorted(fuseable + escalated + capped, key=lambda e: e.ts)
 
 
 def to_contract_event(ev: RawEvent, seq: int, session_id: str,

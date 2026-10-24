@@ -136,19 +136,16 @@ def _run(store, sid: str, broadcast):
                                       {"id": f"X-{a['id']}-hand", "reason": "音频素材不含手部通道"},
                                       {"id": f"X-{a['id']}-physio", "reason": "音频素材不含视频生理通道"}]
                     duration = max(duration, a.get("duration_seconds") or 0)
-                    event_ids = []
                     slice_rec = {"asset_id": a["id"], "asset_name": a["name"], "kind": kind,
                                  "role": "primary", "size_bytes": a["size_bytes"],
                                  "duration_seconds": a.get("duration_seconds") or 0,
                                  "modality_available": mods,
                                  "modality_unavailable": [m for m in VIDEO_MODALITIES if m not in mods],
                                  "steps": [s["stage"] for s in steps[step_base:step_base + n_steps]],
-                                 "event_ids": event_ids, "suppressed": suppressed,
+                                 "event_ids": [], "suppressed": suppressed,
                                  "trend": None, "cap_note": None,
                                  "quality": quality, "quality_note": qnote}
-                    for ev in all_events:
-                        if ev.asset_id == a["id"]:
-                            event_ids.append("")   # 后填：融合后统一编号
+                    slices.append(slice_rec)
                     session_mods = sorted(set(session_mods) | set(mods))
                 else:  # mmwave / nir
                     mod = __import__("app.pipeline.ext_mmwave", fromlist=["run"]) if kind == "mmwave" \

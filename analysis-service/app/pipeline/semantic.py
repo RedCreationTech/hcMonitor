@@ -201,6 +201,10 @@ def run(turns: list, out_dir: Path) -> dict:
         })
 
     # ── 矛盾 → RawEvent（semantic 模态）───────────────────────────────────
+    # 噪音门：TTS/口语中无关陈述对的假阳性多，只放行矛盾分 ≥0.5 的对（规则库 R-Semantic-Contradict
+    # 本身要求人工核验；低于阈值的对仍计入话题四维分解的认知冲突维）
+    MIN_CONTRA = 0.5
+    hard = [c for c in contradictions if c["contradiction"] >= MIN_CONTRA]
     anomalies = [RawEvent(
         ts=float(turns[c["turn_j"]]["ts"]), modality="semantic",
         type="信息前后矛盾（NLI 不一致）", severity="ALERT",
@@ -209,7 +213,7 @@ def run(turns: list, out_dir: Path) -> dict:
         window=(c["ts_i"], c["ts_j"]),
         metrics={"矛盾分数": (c["contradiction"], ""), "蕴含分数": (c["entailment"], ""),
                  "前轮": (c["turn_i"], "轮"), "后轮": (c["turn_j"], "轮")},
-    ) for c in contradictions]
+    ) for c in hard]
 
     (sm_dir / "topics.json").write_text(json.dumps({
         "n_turns": len(turns), "n_topics": len(topics),
