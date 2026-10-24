@@ -7,3 +7,11 @@ dist/
 .DS_Store
 *.log
 *.local
+
+# Python 分析服务
+analysis-service/.venv/
+__pycache__/
+*.pyc
+analysis-service/models/        # 模型权重（ModelScope/HF 下载，不入库）
+analysis-service/data/          # 素材/中间产物/会话库（运行时生成）
+analysis-service/*.task

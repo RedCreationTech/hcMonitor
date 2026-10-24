@@ -1,0 +1,29 @@
+# 「言心」MindDialogue 精简版 · 真实分析服务（需求 7008111111）
+# Python 3.11（torch/funasr 在 3.14 无 wheel，本机 Intel Mac 全 CPU 路线）
+
+# 语音与语义
+funasr>=1.4            # VAD+ASR(SeACo-Paraformer/SenseVoice)+标点+CAM++ 分角色（含 torch/modelscope）
+praat-parselmouth      # F0/jitter/shimmer/HNR（Praat 内核，GeMAPS 自复现，避开 openSMILE 商用禁令）
+librosa                # 能量/谱质心/静音段（funasr 已带）
+bertopic               # 话题切分（bge-m3 embedding）
+sentence-transformers  # bge-m3 加载（本地路径）
+
+# 视觉（MediaPipe legacy solutions：模型内嵌 wheel，无需外网下载 .task）
+mediapipe
+opencv-python-headless
+
+# 信号处理与工程
+scipy                  # 毫米波带通/谱峰、fNIRS 趋势滤波
+numpy
+fastapi
+uvicorn[standard]
+websockets
+python-multipart
+aiofiles
+pydantic
+
+# 可解释归因 LLM（私有化，CPU）
+llama-cpp-python       # Qwen2.5-7B-Instruct GGUF Q4_K_M（ModelScope 下载）
+
+# 正式版 PPT 生成
+python-pptx
