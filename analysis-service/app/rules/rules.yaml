@@ -1,0 +1,96 @@
+# 归因规则库（L2 条件模式 → 候选 L3 心理解释）
+# 引擎只命中不推理；每条附文献 DOI/出处、反事实句、免责句。
+# 数值判定全部由检测代码计算，LLM 仅做命中结果的结构化叙述组装。
+#
+# 阈值口径：threshold 为个体基线偏离的 z-score（个体静息/前段标定）；
+# 无个体标定时只出相对升幅、不出绝对结论（双轨基线，见方案 §9）。
+
+- rule_id: R-Voice-RateUp
+  modality: voice
+  pattern: "语速较个体基线显著加快（z≥2.0 持续 ≥5s），伴随平均 F0 上移"
+  psych_state: "应激性紧张（中度）"
+  literature_ref: "Menne et al., BMC Psychiatry, 2024, doi:10.1186/s12888-024-06253-6（焦虑言语：语速加快、音调升高）"
+  weight: 0.58
+  threshold: 2.0
+  counterfactual: "若语速平稳且 F0 无系统性上移，则不支持紧张解释；需排除热场、习惯性快语等因素。"
+  disclaimer: "模型推断，非临床心理诊断；需与语义层互证。"
+
+- rule_id: R-Voice-Pause
+  modality: voice
+  pattern: "停顿率与静默占比较基线升高（z≥2.0），话轮时长缩短"
+  psych_state: "认知负荷升高或陈述准备（低置信）"
+  literature_ref: "Menne et al., BMC Psychiatry, 2024, doi:10.1186/s12888-024-06253-6（抑郁/焦虑言语：停顿增多）"
+  weight: 0.51
+  threshold: 2.0
+  counterfactual: "若停顿集中于话题切换点，属正常语篇组织；仅当停顿聚集于特定追问后时提示回避性准备。"
+  disclaimer: "模型推断，非临床心理诊断。"
+
+- rule_id: R-Voice-Jitter
+  modality: voice
+  pattern: "jitter/shimmer 较基线升高（z≥2.5）"
+  psych_state: "嗓音紧张（中度）"
+  literature_ref: "Praat 嗓音学标准指标；jitter 升高与声带紧张相关（嗓音学通识，见 GeMAPS 定义）"
+  weight: 0.53
+  threshold: 2.5
+  counterfactual: "若仅出现在长时说话末尾，属生理性疲劳；需结合语义层判断是否为情境性紧张。"
+  disclaimer: "模型推断，非临床心理诊断。"
+
+- rule_id: R-Semantic-Contradict
+  modality: semantic
+  pattern: "前后陈述 NLI 判定为矛盾（蕴含分数 < 矛盾分数，跨度 ≥2 个话题轮次）"
+  psych_state: "陈述一致性风险（需人工核验）"
+  literature_ref: "OCNLI/CMNLI 中文 NLI 语料；Erlangshen-Roberta-NLI 模型卡"
+  weight: 0.74
+  threshold: 0.5
+  counterfactual: "若两段陈述话题不同或存在时间上下文差异，矛盾判定可能是假阳性；必须人工回放核对。"
+  disclaimer: "模型推断，非临床心理诊断；NLI 矛盾≠事实矛盾，仅提示核验点。"
+
+- rule_id: R-Face-AU47
+  modality: face
+  pattern: "AU4（皱眉）+ AU7（眼睑收紧）短时闪现（40–500ms，CASME II 门限）"
+  psych_state: "负性情绪闪现（低置信）"
+  literature_ref: "CAS(ME)^2 / SAMM 微表情基准定义；AU 组合见 Ekman FACS"
+  weight: 0.51
+  threshold: 0.5
+  counterfactual: "皱眉也可能是专注思考或光线刺激；低置信条目必须结合语义通道互证，不单独升级。"
+  disclaimer: "模型推断，非临床心理诊断；微表情学术 SOTA F1 仅 0.41-0.45，本系统仅做 AU 闪现检测。"
+
+- rule_id: R-Pose-Withdraw
+  modality: pose
+  pattern: "躯干后仰角或头部偏航角离开对话中位区间持续 ≥3s，伴随肩线法线偏离"
+  psych_state: "心理距离拉开（低置信，建议结合语义）"
+  literature_ref: "非语言行为学：身体后仰/转开与心理距离相关（Mehrabian 非语言沟通研究综述）"
+  weight: 0.49
+  threshold: 2.0
+  counterfactual: "坐姿调整、靠背疲劳可产生相同几何特征；需与言语内容联合判定。"
+  disclaimer: "模型推断，非临床心理诊断。"
+
+- rule_id: R-Hand-SelfTouch
+  modality: hand
+  pattern: "手-脸/手-手自触类适应性动作频次较基线升高（z≥2.0，单次 ≥1s）"
+  psych_state: "紧张性自我安抚（中度）"
+  literature_ref: "适应性动作（adaptor）与自我安抚：非语言行为学研究（Marcos-Ramiro 2013, FG 会议）"
+  weight: 0.53
+  threshold: 2.0
+  counterfactual: "习惯性摸脸/整理衣物可产生相同特征；频次突增（而非绝对值）才是信号。"
+  disclaimer: "模型推断，非临床心理诊断。"
+
+- rule_id: R-Physio-HRV
+  modality: physio
+  pattern: "rPPG-HRV 应激未回落（心率趋势上行后持续高于基线 ≥30s）"
+  psych_state: "生理应激未回落（中度，需与言语通道互证）"
+  literature_ref: "rPPG-Toolbox, arXiv:2210.00716；HRV 指标只报趋势方向，不报绝对值"
+  weight: 0.56
+  threshold: 1.5
+  counterfactual: "若同步出现走动/光照跳变，信号质量降级；仅质量 ok 段进入判定。"
+  disclaimer: "模型推断，非临床心理诊断；非接触视频生理指标为趋势参考。"
+
+- rule_id: R-Fusion-CrossModal
+  modality: semantic
+  pattern: "同一 45s 窗内 ≥2 个模态独立命中异常且含主信号 ≥1 条"
+  psych_state: "综合异常（高）——建议人工介入核实"
+  literature_ref: "决策级多模态融合（本系统 E1/E2 判定口径）"
+  weight: 0.83
+  threshold: 2.0
+  counterfactual: "若各模态异常时间散布整个会话且无聚集，可能是基线误设而非真实应激。"
+  disclaimer: "模型推断，非临床心理诊断；升级为提示人工介入，不自动定性。"
