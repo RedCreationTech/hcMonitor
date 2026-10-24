@@ -80,8 +80,8 @@ def _head_pose(pts: np.ndarray, cw: int, ch: int) -> tuple[float, float, float]:
         _, rvec, _ = cv2.solvePnP(_HEAD_POSE_3D, pts.astype(np.float64), k, None,
                                   flags=cv2.SOLVEPNP_ITERATIVE)
         rot, _ = cv2.Rodrigues(rvec)
-        (pitch, yaw, roll), _ = cv2.RQDecomp3x3(rot)
-        return float(pitch), float(yaw), float(roll)
+        euler = cv2.RQDecomp3x3(rot)[0]         # (pitch, yaw, roll)，度
+        return float(euler[0]), float(euler[1]), float(euler[2])
     except cv2.error:
         return float("nan"), float("nan"), float("nan")
 
@@ -145,6 +145,7 @@ def run(video_path: Path, out_dir: Path) -> dict:
     faces: list[dict | None] = []     # AU 原始量 + 欧拉角（裁剪图坐标系）
     poses: list[tuple[float, float] | None] = []   # (后仰角, 肩线偏航)
     hand_t: list[float] = []
+    hand_fi: list[int] = []           # 手部样本对应的处理帧号（接质量门用）
     hand_sig: list[tuple[bool, bool, float]] = []  # (手近脸, 双手互搓, 掌距px)
 
     idx = -1
@@ -203,11 +204,25 @@ def run(video_path: Path, out_dir: Path) -> dict:
                                for h_ in hl[:2]]
                     palm_d = float(np.linalg.norm(centers[0] - centers[1]))
             hand_t.append(t)
+            hand_fi.append(len(ts) - 1)
             hand_sig.append((near, False, palm_d))   # 互搓标记二遍扫描时回填
 
     cap.release()
     n = len(ts)
     fps_eff = n / ts[-1] if n > 1 and ts[-1] > 0 else FPS
+
+    # ── 质量门：SEG_S 片段人脸检出率 < 60% → 片段 degraded，不进判定 ──
+    seg_n = max(1, int(round(SEG_S * fps_eff)))
+    good_seg: list[bool] = []
+    for s in range(0, n, seg_n):
+        seg = faces[s:s + seg_n]
+        good_seg.extend([np.mean([f is not None for f in seg]) >= FACE_RATE_MIN] * len(seg))
+    good_seg = good_seg[:n]
+    face_rate = float(np.mean([f is not None for f in faces])) if n else 0.0
+    seg_starts = range(0, n, seg_n)
+    degraded_segs = [s for s in seg_starts
+                     if np.mean([faces[i] is not None for i in range(s, min(s + seg_n, n))]) < FACE_RATE_MIN]
+    usable = [i for i in range(n) if good_seg[i]]
 
     # ── 双手互搓二遍扫描（掌距小 + 相对速度高，连续 ≥1s 记一次）──
     rub_eps: list[tuple[float, float]] = []          # (t_start, t_end)
@@ -222,8 +237,8 @@ def run(video_path: Path, out_dir: Path) -> dict:
             vels.append(v)
             d_prev = d
         face_h_med = float(np.nanmedian([f["face_h"] for f in faces if f])) if any(faces) else 150.0
-        rub_mask = [(not np.isnan(d)) and d < 0.5 * face_h_med and v > 60.0
-                    for (_, _, d), v in zip(hand_sig, vels)]
+        rub_mask = [(not np.isnan(d)) and d < 0.5 * face_h_med and v > 60.0 and good_seg[hand_fi[i]]
+                    for i, ((_, _, d), v) in enumerate(zip(hand_sig, vels))]
         min_len = max(2, int(HAND_HOLD_S * fps_eff / HAND_EVERY))
         for s, e in _runs(rub_mask, gap_tol=2):
             if e - s + 1 >= min_len:
@@ -234,22 +249,10 @@ def run(video_path: Path, out_dir: Path) -> dict:
     # 手近脸持续段（≥1s 记一次）
     touch_eps: list[tuple[float, float]] = []
     min_len = max(2, int(HAND_HOLD_S * fps_eff / HAND_EVERY))
-    for s, e in _runs([s0 for s0, _, _ in hand_sig], gap_tol=2):
+    for s, e in _runs([near and good_seg[hand_fi[i]]
+                       for i, (near, _, _) in enumerate(hand_sig)], gap_tol=2):
         if e - s + 1 >= min_len:
             touch_eps.append((hand_t[s], hand_t[e]))
-
-    # ── 质量门：SEG_S 片段人脸检出率 < 60% → 片段 degraded ──
-    seg_n = max(1, int(round(SEG_S * fps_eff)))
-    good_seg: list[bool] = []
-    for s in range(0, n, seg_n):
-        seg = faces[s:s + seg_n]
-        good_seg.extend([np.mean([f is not None for f in seg]) >= FACE_RATE_MIN] * len(seg))
-    good_seg = good_seg[:n]
-    face_rate = float(np.mean([f is not None for f in faces])) if n else 0.0
-    seg_starts = range(0, n, seg_n)
-    degraded_segs = [s for s in seg_starts
-                     if np.mean([faces[i] is not None for i in range(s, min(s + seg_n, n))]) < FACE_RATE_MIN]
-    usable = [i for i in range(n) if good_seg[i]]
 
     # ── AU4/AU7 代理（相对会话中位数）与闪现事件 ──
     anomalies: list[RawEvent] = []
@@ -288,7 +291,8 @@ def run(video_path: Path, out_dir: Path) -> dict:
         base = [v for v in valid[:n_base]]
         mu, sd = float(np.mean(base)), float(np.std(base))
         sd = max(sd, POSE_SD_FLOOR)
-        mask = [(v is not None and abs(v - mu) > POSE_SIGMA * sd) for v in vals]
+        mask = [(v is not None and good_seg[i] and abs(v - mu) > POSE_SIGMA * sd)
+                for i, v in enumerate(vals)]
         for s, e in _runs(mask, gap_tol=int(0.2 * fps_eff)):
             if (e - s + 1) / fps_eff >= POSE_HOLD_S:
                 peak_i = max(range(s, e + 1), key=lambda i: abs(vals[i] - mu))

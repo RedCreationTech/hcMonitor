@@ -4,7 +4,9 @@
 - VAD   iic/speech_fsmn_vad_zh-cn-16k-common-onnx     长音频切段
 - ASR   iic/SenseVoiceSmall                            非自回归，附词级时间戳
 - 标点  iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch  句段切分
-- 分角色 iic/speech_campplus_speaker-diarization_common VAD+CAM++ 一体化
+- 分角色 iic/speech_campplus_speaker-diarization_common 的 segmentation-clustering
+        流程（其 configuration.json 声明）：VAD 段 → CAM++ 说话人嵌入
+        （speaker_model=iic/speech_campplus_sv_zh-cn_16k-common）→ 谱聚类（merge_thr=0.78）
 
 说话人归约：分角色总时长更长的一方 → interviewer（问话方），其余 → subject；
 ASR 句段与分角色片段按重叠比例绑定（人数 >2 时天然取重叠最长者），
@@ -16,6 +18,8 @@ import json
 import re
 from pathlib import Path
 
+import numpy as np
+
 from ..config import MS_ASR, MS_VAD, MS_PUNC, MS_DIAR
 from ..model_dl import ms_download
 
@@ -24,12 +28,13 @@ _TAG_RE = re.compile(r"<\|[^|]*\|>")          # SenseVoice 输出里的 <|zh|><|
 _CJK_RE = re.compile(r"[\u4e00-\u9fff]")
 
 _CASCADE = None   # ASR+VAD+标点级联模型
-_DIAR = None      # 分角色 pipeline
+_SPK = None       # CAM++ 说话人嵌入模型
+_CB = None        # 谱聚类后端（ClusterBackend，merge_thr 读自分角色模型配置）
 
 
 def _load():
     """惰性加载全部模型（模块级单例）。"""
-    global _CASCADE, _DIAR
+    global _CASCADE, _SPK, _CB
     if _CASCADE is None:
         import torch
         torch.set_num_threads(_CPU_THREADS)
@@ -41,10 +46,21 @@ def _load():
         _CASCADE = AutoModel(
             model=str(asr_dir), vad_model=str(vad_dir), punc_model=str(punc_dir),
             device="cpu", ncpu=_CPU_THREADS,
-            generate_kwargs={"with_itn": True},
         )
-        _DIAR = AutoModel(model=str(diar_dir), device="cpu", ncpu=_CPU_THREADS)
-    return _CASCADE, _DIAR
+        # 分角色 pipeline 配置驱动：speaker_model + merge_thr 均读自 MS_DIAR 仓库
+        from funasr.models.campplus.cluster_backend import ClusterBackend
+        cfg = json.loads((diar_dir / "configuration.json").read_text("utf-8"))
+        mconf = cfg.get("model", {})
+        cb_kwargs = {k: v for k, v in (mconf.get("model_config") or {}).items()
+                     if k in ("merge_thr",)}
+        spk_id = str(mconf.get("speaker_model",
+                               "iic/speech_campplus_sv_zh-cn_16k-common"))
+        if spk_id.startswith("damo/"):            # 旧命名空间 → iic（同一模型）
+            spk_id = "iic/" + spk_id.split("/", 1)[1]
+        _SPK = AutoModel(model=str(ms_download(spk_id)),
+                         device="cpu", ncpu=_CPU_THREADS)
+        _CB = ClusterBackend(**cb_kwargs)
+    return _CASCADE, _SPK, _CB
 
 
 def _clean(text: str) -> str:
@@ -56,16 +72,28 @@ def _cjk_count(text: str) -> int:
     return len(_CJK_RE.findall(text))
 
 
-def _normalize_diar(diar_res) -> list[tuple[float, float, int]]:
-    """分角色输出 → [(start_s, end_s, spk_id)]；自动判定毫秒/秒单位。"""
-    segs = []
-    for item in diar_res or []:
-        if not isinstance(item, dict) or "start" not in item:
-            continue
-        segs.append((float(item["start"]), float(item["end"]), int(item["spk"])))
-    if segs and max(e for _, e, _ in segs) > 10000:      # 毫秒单位 → 秒
-        segs = [(s / 1000.0, e / 1000.0, k) for s, e, k in segs]
-    return sorted(segs, key=lambda x: x[0])
+def _spk_segments(cascade, spk, cb, wav_path: Path) -> list[tuple[float, float, int]]:
+    """分角色：VAD 段切 1.5s/0.75s 块 → CAM++ 嵌入 → 谱聚类 → 平滑合并 → [(start_s, end_s, spk)]。"""
+    import torch
+    import librosa
+    from funasr.models.campplus.utils import sv_chunk, postprocess
+
+    y, sr = librosa.load(str(wav_path), sr=16000, mono=True)
+    vad_res = cascade.inference(input=str(wav_path),
+                                model=cascade.vad_model,
+                                kwargs=cascade.vad_kwargs)[0]
+    segs_ms = vad_res.get("value") or []
+    vad_segs = [[s / 1000.0, e / 1000.0,
+                 y[int(s / 1000.0 * sr):int(e / 1000.0 * sr)]]
+                for s, e in segs_ms]
+    chunks = sv_chunk(vad_segs)
+    if not chunks:
+        return []
+    spk_res = spk.generate(input=[c[2] for c in chunks])
+    embs = np.stack([np.asarray(r["spk_embedding"]).reshape(-1) for r in spk_res])
+    labels = np.asarray(cb(torch.from_numpy(embs).float()))
+    out = postprocess(chunks, None, labels, embs)
+    return [(float(s), float(e), int(k)) for s, e, k in out]
 
 
 def _bind_spk(s_start: float, s_end: float,
@@ -97,11 +125,12 @@ def run(wav_path: Path, out_dir: Path) -> dict:
     wav_path = Path(wav_path)
     sp_dir = Path(out_dir) / "speech"
     sp_dir.mkdir(parents=True, exist_ok=True)
-    cascade, diar = _load()
+    cascade, spk, cb = _load()
 
     # ── ASR 级联（VAD 切段 + SenseVoice + 标点 + 句级时间戳）────────────────
     res = cascade.generate(
         input=str(wav_path),
+        use_itn=True,                   # SenseVoice 富文本规整（数字/标点规范化）
         output_timestamp=True,          # SenseVoice 词级时间戳
         sentence_timestamp=True,        # 标点切句 + 时间戳对齐 → sentence_info
         batch_size_s=300,
@@ -113,8 +142,8 @@ def run(wav_path: Path, out_dir: Path) -> dict:
                       "text": _clean(res.get("text", "")),
                       "timestamp": res.get("timestamp") or []}]
 
-    # ── 分角色（VAD + CAM++ 聚类）─────────────────────────────────────────
-    diar_segs = _normalize_diar(diar.generate(input=str(wav_path)))
+    # ── 分角色（segmentation-clustering：VAD → CAM++ 嵌入 → 谱聚类）──────────
+    diar_segs = _spk_segments(cascade, spk, cb, wav_path)
     roles = _role_map(diar_segs)
     degraded = len(roles) <= 1          # 只分出 1 人 = 分角色降级
 
@@ -154,5 +183,9 @@ def run(wav_path: Path, out_dir: Path) -> dict:
     (sp_dir / "turns.json").write_text(
         json.dumps(turns, ensure_ascii=False, indent=1), "utf-8")
     (sp_dir / "segments.json").write_text(
-        json.dumps(raw_segments, ensure_ascii=False, indent=1), "utf-8")
+        json.dumps({
+            "asr_segments": raw_segments,
+            "diar_segments": [{"start": round(s, 2), "end": round(e, 2),
+                               "spk": k, "role": roles.get(k)} for s, e, k in diar_segs],
+        }, ensure_ascii=False, indent=1), "utf-8")
     return {"turns": turns}

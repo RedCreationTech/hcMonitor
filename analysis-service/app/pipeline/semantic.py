@@ -57,6 +57,7 @@ def _load_nli():
 
 def _nli_probs(premise: str, hypothesis: str) -> dict:
     """NLI 三分类分数 {contradiction, neutral, entailment}（小写键，缺类补 0）。"""
+    import torch
     tok, model = _load_nli()
     enc = tok(premise, hypothesis, return_tensors="pt", truncation=True, max_length=256)
     with torch.no_grad():

@@ -37,9 +37,10 @@ class Store:
             self.db["seq"] += 1
             seq = self.db["seq"]
             prev = self.db["audit"][-1]["hash"] if self.db["audit"] else "GENESIS"
-            raw = f"{seq}|{time.time():.3f}|{actor}|{action}|{resource}|{prev}"
+            now = time.time()
+            raw = f"{seq}|{now:.3f}|{actor}|{action}|{resource}|{prev}"
             h = hashlib.sha256(raw.encode()).hexdigest()
-            entry = {"seq": seq, "ts": round(time.time(), 3), "actor": actor,
+            entry = {"seq": seq, "ts": round(now, 3), "actor": actor,
                      "action": action, "resource": resource,
                      "prev_hash": prev, "hash": h}
             self.db["audit"].append(entry)
