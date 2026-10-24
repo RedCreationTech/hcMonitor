@@ -20,7 +20,8 @@ MS_VAD = "iic/speech_fsmn_vad_zh-cn-16k-common-onnx"
 MS_PUNC = "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"
 MS_DIAR = "iic/speech_campplus_speaker-diarization_common"   # VAD+CAM++ 一体化分角色
 MS_EMBED = "BAAI/bge-m3"                          # 话题切分 embedding
-MS_NLI = "AI-ModelScope/Erlangshen-Roberta-330M-NLI"         # 中文 NLI 矛盾初筛
+NLI_HF = "IDEA-CCNL/Erlangshen-Roberta-330M-NLI"  # 中文 NLI 矛盾初筛（ModelScope 无镜像，走 HF；
+                                                  #  下载失败时设 HF_ENDPOINT=https://hf-mirror.com）
 MS_LLM_GGUF = "Qwen/Qwen2.5-7B-Instruct-GGUF"     # 归因叙述组装（Q4_K_M）
 
 # ── 判定口径 ─────────────────────────────────────────────────────────

@@ -13,8 +13,11 @@ mediapipe
 opencv-python-headless
 
 # 信号处理与工程
+# Intel Mac 约束：numba 0.59 起取消 macosx x86_64 wheel，封顶 0.58.1 + llvmlite 0.41.1 + numpy 1.x
+numpy<2
+numba==0.58.1
+llvmlite==0.41.1
 scipy                  # 毫米波带通/谱峰、fNIRS 趋势滤波
-numpy
 fastapi
 uvicorn[standard]
 websockets
