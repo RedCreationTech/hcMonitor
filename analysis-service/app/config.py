@@ -16,7 +16,7 @@ STORE = DATA / "store.json"         # 会话/报告/审计的状态库
 # ── ModelScope 模型 ID ──────────────────────────────────────────────
 MS_ASR = "iic/SenseVoiceSmall"                    # 主选：非自回归，中文 CPU 17× 实时，附情感标签
 MS_ASR_LARGE = "iic/speech_seaco_paraformer_large_asr_nat-zh-cn-16k-common-vocab8404-pytorch"  # 备选
-MS_VAD = "iic/speech_fsmn_vad_zh-cn-16k-common-onnx"
+MS_VAD = "iic/speech_fsmn_vad_zh-cn-16k-common-pytorch"   # onnx 版在 funasr1.4.16 无法加载，用同权重 pytorch 版
 MS_PUNC = "iic/punc_ct-transformer_zh-cn-common-vocab272727-pytorch"
 MS_DIAR = "iic/speech_campplus_speaker-diarization_common"   # VAD+CAM++ 一体化分角色
 MS_EMBED = "BAAI/bge-m3"                          # 话题切分 embedding

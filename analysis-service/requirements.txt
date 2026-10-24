@@ -3,6 +3,7 @@
 
 # 语音与语义
 funasr>=1.4            # VAD+ASR(SeACo-Paraformer/SenseVoice)+标点+CAM++ 分角色（含 torch/modelscope）
+kaldi-native-fbank     # funasr fbank 特征后端（venv 未装 torchaudio，VAD 前端必需）
 # 版本三角约束（transformers5.x 与 sentence-transformers6.x 组合在 import 期炸 nn 命名空间，
 #  Intel Mac 全链路验证过的组合如下）：
 transformers==4.51.3

@@ -20,12 +20,16 @@ from pathlib import Path
 
 import numpy as np
 
+from ..config import MODELS as _MODELS
 from ..config import MS_ASR, MS_VAD, MS_PUNC, MS_DIAR
 from ..model_dl import ms_download
 
 _CPU_THREADS = 4
 _TAG_RE = re.compile(r"<\|[^|]*\|>")          # SenseVoice 输出里的 <|zh|><|HAPPY|> 等元信息标签
 _CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+# config.MS_VAD 指向 onnx 仓库，funasr 1.4.16 无对应模型类（仓库无 model.pt、无 onnx 类）；
+# 退回同架构同权重的 pytorch 版（funasr 官方别名 fsmn-vad 的解析目标）
+_VAD_FALLBACK = "iic/speech_fsmn_vad_zh-cn-16k-common-pytorch"
 
 _CASCADE = None   # ASR+VAD+标点级联模型
 _SPK = None       # CAM++ 说话人嵌入模型
@@ -33,22 +37,32 @@ _CB = None        # 谱聚类后端（ClusterBackend，merge_thr 读自分角色
 
 
 def _load():
-    """惰性加载全部模型（模块级单例）。"""
+    """惰性加载全部模型（模块级单例）。
+
+    funasr 按模型 ID 自行解析仓库配置（本地路径会跳过 config.yaml 解析），
+    MODELSCOPE_CACHE 指到 models/ 复用同一份缓存。
+    """
     global _CASCADE, _SPK, _CB
     if _CASCADE is None:
+        import os
         import torch
+        os.environ.setdefault("MODELSCOPE_CACHE", str(_MODELS))
         torch.set_num_threads(_CPU_THREADS)
         from funasr import AutoModel
-        asr_dir = ms_download(MS_ASR)
-        vad_dir = ms_download(MS_VAD)
-        punc_dir = ms_download(MS_PUNC)
-        diar_dir = ms_download(MS_DIAR)
-        _CASCADE = AutoModel(
-            model=str(asr_dir), vad_model=str(vad_dir), punc_model=str(punc_dir),
-            device="cpu", ncpu=_CPU_THREADS,
-        )
+        vad_id = MS_VAD
+        try:                            # 先探测 VAD 可加载性，避免级联建两遍
+            AutoModel(model=vad_id, device="cpu", ncpu=_CPU_THREADS)
+        except RuntimeError as e:
+            if "not registered" not in str(e):
+                raise
+            print(f"[speech] {MS_VAD} 无 funasr 模型类（onnx 仓库），"
+                  f"退回 pytorch 版 {_VAD_FALLBACK}")
+            vad_id = _VAD_FALLBACK
+        _CASCADE = AutoModel(model=MS_ASR, vad_model=vad_id, punc_model=MS_PUNC,
+                             device="cpu", ncpu=_CPU_THREADS)
         # 分角色 pipeline 配置驱动：speaker_model + merge_thr 均读自 MS_DIAR 仓库
         from funasr.models.campplus.cluster_backend import ClusterBackend
+        diar_dir = ms_download(MS_DIAR)
         cfg = json.loads((diar_dir / "configuration.json").read_text("utf-8"))
         mconf = cfg.get("model", {})
         cb_kwargs = {k: v for k, v in (mconf.get("model_config") or {}).items()
@@ -57,8 +71,7 @@ def _load():
                                "iic/speech_campplus_sv_zh-cn_16k-common"))
         if spk_id.startswith("damo/"):            # 旧命名空间 → iic（同一模型）
             spk_id = "iic/" + spk_id.split("/", 1)[1]
-        _SPK = AutoModel(model=str(ms_download(spk_id)),
-                         device="cpu", ncpu=_CPU_THREADS)
+        _SPK = AutoModel(model=spk_id, device="cpu", ncpu=_CPU_THREADS)
         _CB = ClusterBackend(**cb_kwargs)
     return _CASCADE, _SPK, _CB
 
@@ -137,6 +150,10 @@ def run(wav_path: Path, out_dir: Path) -> dict:
     )[0]
     sentences = res.get("sentence_info") or []
     sentences = [s for s in sentences if _clean(s.get("sentence") or s.get("text") or "")]
+    if sentences and max(float(s.get("end", 0.0)) for s in sentences) > 600.0:
+        # sentence_info 时间戳为毫秒（SenseVoice 链路）→ 统一秒
+        sentences = [{**s, "start": float(s.get("start", 0.0)) / 1000.0,
+                      "end": float(s.get("end", 0.0)) / 1000.0} for s in sentences]
     if not sentences:                   # 极端情况退回：整段一条
         sentences = [{"start": 0.0, "end": 0.0,
                       "text": _clean(res.get("text", "")),

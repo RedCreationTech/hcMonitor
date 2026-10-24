@@ -87,7 +87,7 @@ def _is_statement(turn: dict) -> bool:
 
 
 def _compress_label(text: str) -> str:
-    chars = _LABEL_RE.findall(text)
+    chars = re.findall(r"[\u4e00-\u9fff0-9]", text)   # 保留数字（金额/日期是话题关键信息）
     return "".join(chars[:14]) if chars else "（无文本）"
 
 
@@ -214,11 +214,14 @@ def run(turns: list, out_dir: Path) -> dict:
     (sm_dir / "topics.json").write_text(json.dumps({
         "n_turns": len(turns), "n_topics": len(topics),
         "adjacent_sims": [round(s, 4) for s in sims],
-        "topics": [{"topic_id": f"T{n + 1:02d}", "turn_range": [i for i in idxs],
+        "topics": [{"event": "impact", "ts": impacts[n]["ts"],
+                    "topic_id": f"T{n + 1:02d}", "turn_range": [i for i in idxs],
                     "label": impacts[n]["label"],
                     "boundary": list(impacts[n]["boundary"]),
                     "impact_score": impacts[n]["impact_score"],
                     "dims": impacts[n]["dims"],
+                    "rationale_text": impacts[n]["rationale_text"],
+                    "boundary_evidence": impacts[n]["boundary_evidence"],
                     "turns": [{"i": i, "speaker": turns[i]["speaker"],
                                "text": turns[i]["text"]} for i in idxs]}
                    for n, idxs in enumerate(topics)],
