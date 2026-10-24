@@ -1,0 +1,92 @@
+{
+ "session": "SES-20261024-001",
+ "subject": "对象 M-121",
+ "anomalies": 37,
+ "turns": 28,
+ "impacts": 11,
+ "slices": 4,
+ "suppressed": 4,
+ "duration": 156,
+ "peak": "red",
+ "finished_at": "2026-10-24 11:52",
+ "pipeline": "real-1.0（真实算法链）",
+ "severity": {
+  "ALERT": 26,
+  "WARN": 6,
+  "ESCALATED": 4,
+  "INFO": 1
+ },
+ "modality": {
+  "voice": 23,
+  "semantic": 13,
+  "pose": 1
+ },
+ "assets": [
+  {
+   "name": "询问谈话_录像样例_156s.mp4",
+   "kind": "video"
+  },
+  {
+   "name": "谈话录音_音频样例_156s.m4a",
+   "kind": "audio"
+  },
+  {
+   "name": "nir_hbo_152s.csv",
+   "kind": "nir"
+  },
+  {
+   "name": "mmwave_resp_152s.csv",
+   "kind": "mmwave"
+  }
+ ],
+ "top_anomalies": [
+  {
+   "type": "音调较基线降低",
+   "severity": "ALERT",
+   "modality": "voice",
+   "conf": 0.79
+  },
+  {
+   "type": "音调较基线降低",
+   "severity": "WARN",
+   "modality": "voice",
+   "conf": 0.73
+  },
+  {
+   "type": "跨模态同窗聚合升级",
+   "severity": "ESCALATED",
+   "modality": "semantic",
+   "conf": 0.95
+  },
+  {
+   "type": "静默段（音量低于-45dB）",
+   "severity": "INFO",
+   "modality": "voice",
+   "conf": 1.0
+  },
+  {
+   "type": "音高波动较基线收窄",
+   "severity": "ALERT",
+   "modality": "voice",
+   "conf": 0.99
+  },
+  {
+   "type": "音高波动较基线收窄",
+   "severity": "WARN",
+   "modality": "voice",
+   "conf": 0.62
+  },
+  {
+   "type": "信息前后矛盾（NLI 不一致）",
+   "severity": "ALERT",
+   "modality": "semantic",
+   "conf": 0.99
+  },
+  {
+   "type": "音调较基线降低",
+   "severity": "ALERT",
+   "modality": "voice",
+   "conf": 0.99
+  }
+ ]
+}

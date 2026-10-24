@@ -64,6 +64,16 @@ const page = await pageTarget();
 const cdp = client(page.webSocketDebuggerUrl);
 await cdp.ready;
 await cdp.send('Page.enable');
+// --actor=W-02/R-01：导航前注入席位 localStorage（与 tools/shot.mjs 同一份身份表）
+const ACTORS = {
+  'W-02': { id: 'W-02', name: '分析师 W-02', role: 'analyst', seat: '研判席 2' },
+  'R-01': { id: 'R-01', name: '复核人 R-01', role: 'reviewer', seat: '复核席' },
+};
+if (argv.actor && ACTORS[argv.actor]) {
+  await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `try{localStorage.setItem('yansin.actor', ${JSON.stringify(JSON.stringify(ACTORS[argv.actor]))})}catch(e){}`,
+  });
+}
 await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1600, height: 1000, deviceScaleFactor: 2, mobile: false });
 await cdp.send('Page.navigate', { url: argv.url });
 await sleep(Number(argv.settle || 2500));
