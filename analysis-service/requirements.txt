@@ -3,10 +3,14 @@
 
 # 语音与语义
 funasr>=1.4            # VAD+ASR(SeACo-Paraformer/SenseVoice)+标点+CAM++ 分角色（含 torch/modelscope）
+# 版本三角约束（transformers5.x 与 sentence-transformers6.x 组合在 import 期炸 nn 命名空间，
+#  Intel Mac 全链路验证过的组合如下）：
+transformers==4.51.3
+sentence-transformers==5.1.1
+huggingface-hub==0.30.2
 praat-parselmouth      # F0/jitter/shimmer/HNR（Praat 内核，GeMAPS 自复现，避开 openSMILE 商用禁令）
 librosa                # 能量/谱质心/静音段（funasr 已带）
 bertopic               # 话题切分（bge-m3 embedding）
-sentence-transformers  # bge-m3 加载（本地路径）
 
 # 视觉（MediaPipe legacy solutions：模型内嵌 wheel，无需外网下载 .task）
 mediapipe
