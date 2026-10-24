@@ -46,8 +46,8 @@ _HEAD_POSE_IDX = (_PT_NOSE, _PT_CHIN) + _PT_EYE_OUT + _PT_MOUTH
 _HEAD_POSE_3D = np.array([                        # 简化人脸模型（mm，OpenCV 教程口径）
     (0.0, 0.0, 0.0),        # 鼻尖
     (0.0, -330.0, -65.0),   # 下巴
-    (-225.0, 170.0, -135.0), (225.0, 170.0, -135.0),   # 眼外角（图左/图右）
-    (-150.0, -150.0, -125.0), (150.0, -150.0, -125.0),  # 嘴角
+    (225.0, 170.0, -135.0), (-225.0, 170.0, -135.0),   # 眼外角（图左=被谈人右眼）
+    (150.0, -150.0, -125.0), (-150.0, -150.0, -125.0),  # 嘴角
 ], dtype=np.float64)
 
 # solvePnP 在 ROI 裁剪图上做：焦距按裁剪图尺寸近似即可（欧拉角只看相对变化）
@@ -173,8 +173,9 @@ def run(video_path: Path, out_dir: Path) -> dict:
                 hip_c = np.array([(pl[23].x + pl[24].x) / 2 * w, (pl[23].y + pl[24].y) / 2 * h])
                 d = sh_c - hip_c
                 lean = float(np.degrees(np.arctan2(d[0], -d[1])))          # 0=直立
-                tilt = float(np.degrees(np.arctan2((pl[12].y - pl[11].y) * h,
-                                                   (pl[12].x - pl[11].x) * w)))  # 肩线-水平
+                a = np.degrees(np.arctan2((pl[12].y - pl[11].y) * h,
+                                          (pl[12].x - pl[11].x) * w))     # 肩线-水平（无向，包到 ±90°）
+                tilt = float((a + 90.0) % 180.0 - 90.0)
                 # ── FaceMesh（Pose 头 ROI 放大后送入）──
                 hc = _head_crop(frame, pl)
                 if hc:

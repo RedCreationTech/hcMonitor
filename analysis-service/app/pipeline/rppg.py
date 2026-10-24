@@ -38,6 +38,8 @@ HR_HOLD_S = 30.0            # 持续阈值
 BASELINE_FRAC = 0.2
 BRIGHT_CV_MAX = 0.3         # ROI 亮度变异系数上限
 FACE_RATE_MIN = 0.5
+BRIDGE_MAX_S = 4.0          # 缺口超过该时长不插值，退最长连续段
+HR_PLAUSIBLE = (45.0, 140.0)   # 静息谈话合理心率带；带外窗不进趋势判定
 
 
 def _pos_wave(rgb: np.ndarray, fs: float) -> np.ndarray:
@@ -48,7 +50,7 @@ def _pos_wave(rgb: np.ndarray, fs: float) -> np.ndarray:
     for i in range(l, n):
         c = rgb[i - l:i]
         cn = c / (c.mean(axis=0) + 1e-9)        # 时域归一（逐通道除窗内均值）
-        s = cn @ np.array([[0.0, 1.0, -1.0], [-2.0, 1.0, 1.0]])   # 皮肤平面正交基
+        s = cn @ np.array([[0.0, 1.0, -1.0], [-2.0, 1.0, 1.0]]).T   # 皮肤平面正交基
         s1, s2 = s[:, 0], s[:, 1]
         h[i - l:i] = s1 + (np.std(s1) / (np.std(s2) + 1e-9)) * s2
     h[n - 1] = h[n - 2]
@@ -136,6 +138,7 @@ def run(video_path: Path, out_dir: Path) -> dict:
     fs = native_fps / SKIP
     anomalies: list[RawEvent] = []
     hr_series: list[dict] = []
+    face_ok = np.array(face_ok, dtype=bool)
     face_rate = float(np.mean(face_ok)) if n else 0.0
 
     if n < int(2 * WIN_S * fs):
@@ -143,14 +146,14 @@ def run(video_path: Path, out_dir: Path) -> dict:
                 "quality_note": f"有效样本不足（{n} 帧），无法估计心率",
                 "hr_series": []}
 
-    # ── 缺口插值（≤2s）；更大缺口保持 NaN 并在质量说明里交代 ──
+    # ── 缺口处理：≤BRIDGE_MAX_S 的缺口线性插值桥接；更大缺口退最长连续段 ──
     rgb = np.array(rgb_rows, dtype=np.float64)
     gap_idx = np.where(~face_ok)[0]
     max_gap = 0
     if len(gap_idx):
         runs = np.split(gap_idx, np.where(np.diff(gap_idx) > 1)[0] + 1)
         max_gap = max(len(r) for r in runs)
-        if max_gap <= int(2 * fs):
+        if max_gap <= int(BRIDGE_MAX_S * fs):
             for ch in range(3):
                 rgb[:, ch] = np.interp(np.arange(n), np.where(face_ok)[0],
                                        rgb[face_ok, ch])
@@ -160,9 +163,9 @@ def run(video_path: Path, out_dir: Path) -> dict:
     if face_rate < FACE_RATE_MIN:
         quality = "degraded"
         notes.append(f"人脸检出率 {face_rate:.0%}（阈值 {FACE_RATE_MIN:.0%}）")
-    if max_gap > int(2 * fs):
+    if max_gap > int(BRIDGE_MAX_S * fs):
         quality = "degraded"
-        notes.append(f"存在 {max_gap / fs:.0f}s 面部缺失段，插值不可靠")
+        notes.append(f"存在 {max_gap / fs:.0f}s 面部缺失段（>{BRIDGE_MAX_S:.0f}s 不桥接）")
     if bright_cv > BRIGHT_CV_MAX:
         quality = "degraded"
         notes.append(f"ROI 亮度变异系数 {bright_cv:.2f}（阈值 {BRIGHT_CV_MAX}），光照跳变")
@@ -194,13 +197,17 @@ def run(video_path: Path, out_dir: Path) -> dict:
         hr_series.append({"t": round(ts_a[(s + e) // 2], 1),
                           "hr": round(hr, 1), "rmssd": round(rmssd, 1) if rmssd == rmssd else None})
 
-    # ── 趋势事件：较基线中位升高 ≥15% 且持续 ≥30s ──
+    # ── 趋势事件：较基线中位升高 ≥15% 且持续 ≥30s（仅用心率合理带内的窗）──
     hrs = [h["hr"] for h in hr_series]
-    base = float(np.median(hrs[:max(1, int(len(hrs) * BASELINE_FRAC))])) if hrs else float("nan")
-    if hrs:
-        n_base = max(1, int(len(hrs) * BASELINE_FRAC))
-        base = float(np.median(hrs[:n_base]))
-        mask = [h >= base * (1 + HR_RISE) for h in hrs]
+    plausible = [HR_PLAUSIBLE[0] <= h <= HR_PLAUSIBLE[1] for h in hrs]
+    n_out = len(hrs) - sum(plausible)
+    if n_out:
+        notes.append(f"{n_out} 个 HR 窗落在合理带 {HR_PLAUSIBLE[0]:.0f}-"
+                     f"{HR_PLAUSIBLE[1]:.0f}bpm 外（疑运动/压缩伪迹），未进趋势判定")
+    base = float(np.median([h for h, p in zip(hrs[:max(1, int(len(hrs) * BASELINE_FRAC))],
+                                              plausible[:max(1, int(len(hrs) * BASELINE_FRAC))]) if p])) if hrs else float("nan")
+    if hrs and base == base:
+        mask = [p and h >= base * (1 + HR_RISE) for h, p in zip(hrs, plausible)]
         runs: list[tuple[int, int]] = []
         cur: list[int] | None = None
         for i, m in enumerate(mask):
