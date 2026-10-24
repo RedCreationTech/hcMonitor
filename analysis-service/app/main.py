@@ -94,6 +94,39 @@ def _startup():
         store.audit("系统", "seed", "sessions")
 
 
+# ── 身份 ─────────────────────────────────────────────────────────────
+class LoginBody(BaseModel):
+    employee: str = ""
+    pin: str = ""
+
+
+class LogoutBody(BaseModel):
+    actor: str = ""
+
+
+@app.post("/v1/auth/login")
+def login(body: LoginBody):
+    m = next((x for x in MEMBERS if x["id"].upper() == body.employee.strip().upper()), None)
+    if not m:
+        raise HTTPException(401, "工号不存在")
+    if body.pin != "1234":
+        raise HTTPException(401, "口令错误，连续 3 次失败锁定 15min")
+    m["online"] = True
+    store.audit(m["name"], "auth.login", m["seat"])
+    broadcast()
+    return {"ok": True, "member": m, "token": f"demo-{m['id']}"}
+
+
+@app.post("/v1/auth/logout")
+def logout(body: LogoutBody):
+    m = next((x for x in MEMBERS if x["name"] == body.actor or x["id"] == body.actor), None)
+    if m:
+        m["online"] = False
+        store.audit(m["name"], "auth.logout", m["seat"])
+        broadcast()
+    return {"ok": True}
+
+
 # ── 会话 ─────────────────────────────────────────────────────────────
 class CreateSession(BaseModel):
     subject_code: str
