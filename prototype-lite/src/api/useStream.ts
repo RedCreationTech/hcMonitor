@@ -53,3 +53,11 @@ export function useApi() {
     return data as T;
   }, []);
 }
+
+/** multipart 上传：不带 Content-Type，由浏览器自动生成 boundary。错误处理与 useApi 保持一致 */
+export async function uploadFile<T>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(`/v1${path}`, { method: 'POST', body: form });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error((data as { message?: string }).message ?? res.statusText), { status: res.status, data });
+  return data as T;
+}

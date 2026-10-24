@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { App, Alert, Button, Card, Form, Input, Modal, Segmented, Select, Statistic, Table, Tag, Tooltip, Upload } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { useApi, useStream } from '../../api/useStream';
+import { uploadFile, useApi, useStream } from '../../api/useStream';
 import type { AssetKind, AssetRef, DeploymentForm, LampLevel, SessionStatus } from '../../shared/types';
 import { ASSET_KIND_LABEL, FORM_LABEL } from '../../../mock/script';
+import { LiveCapture } from './LiveCapture';
 
 /** 扩展信号按采样序列文件登记：读一行算一行，不解码、不上传内容 */
 const probeSeries = async (file: File) => {
@@ -50,8 +51,11 @@ export function SessionsPage() {
   const [status, setStatus] = useState<'all' | SessionStatus>('all');
   const [kw, setKw] = useState('');
   const [open, setOpen] = useState(false);
+  const [captureOpen, setCaptureOpen] = useState(false);
   const source = 'imported' as const;
   const [assets, setAssets] = useState<AssetRef[]>([]);
+  /** 文件本体暂存：元数据探测逻辑不变，真实模式创建会话后逐个上传；mock 模式无上传端点，仅登记元数据 */
+  const [pending, setPending] = useState<Array<{ ref: AssetRef; file: File }>>([]);
   const [form] = Form.useForm();
 
   const sessions = (state?.sessions ?? []).filter((s) => {
@@ -65,20 +69,42 @@ export function SessionsPage() {
   });
 
   /** 同一路信号可以有多个文件（多台摄像机 / 前后两段采样），按 文件名+类型 去重 */
-  const addAsset = (a: AssetRef) =>
+  const addAsset = (a: AssetRef, file: File) => {
     setAssets((prev) => (prev.some((x) => x.name === a.name && x.kind === a.kind) ? prev : [...prev, a]));
-  const dropAsset = (id: string) => setAssets((prev) => prev.filter((x) => x.id !== id));
+    setPending((prev) => (prev.some((x) => x.ref.name === a.name && x.ref.kind === a.kind) ? prev : [...prev, { ref: a, file }]));
+  };
+  const dropAsset = (id: string) => {
+    setAssets((prev) => prev.filter((x) => x.id !== id));
+    setPending((prev) => prev.filter((x) => x.ref.id !== id));
+  };
 
   const create = async () => {
     const v = await form.validateFields();
     if (!assets.length) return message.warning('至少登记一份素材文件（音视频或扩展信号任一即可）');
     try {
       const s = await post<{ id: string }>('/sessions', { ...v, source, assets });
+      // 逐个上传文件本体：real 模式由 Python 服务接收字节并实测元数据；mock 模式无此端点，走 catch 仅登记元数据
+      let uploaded = 0;
+      for (const p of pending) {
+        const fd = new FormData();
+        fd.append('file', p.file);
+        fd.append('kind', p.ref.kind);
+        fd.append('asset_id', p.ref.id);
+        try {
+          await uploadFile(`/sessions/${s.id}/assets`, fd);
+          uploaded += 1;
+        } catch {
+          message.warning('素材上传未成功（服务端未支持上传），仅登记元数据');
+        }
+      }
       message.success(
-        `已创建 ${s.id}（离线导入 · ${assets.length} 份素材）：点该行「离线分析」起批，全部素材逐份切片后汇成一份报告`,
+        uploaded === pending.length && pending.length > 0
+          ? `已创建 ${s.id}（离线导入 · ${assets.length} 份素材），素材已上传，可起批分析`
+          : `已创建 ${s.id}（离线导入 · ${assets.length} 份素材）：点该行「离线分析」起批，全部素材逐份切片后汇成一份报告`,
       );
       setOpen(false);
       setAssets([]);
+      setPending([]);
       form.resetFields();
     } catch (e) {
       message.error((e as Error).message);
@@ -119,6 +145,7 @@ export function SessionsPage() {
           onChange={(e) => setKw(e.target.value)}
         />
         <span className="grow" />
+        <Button type="default" onClick={() => setCaptureOpen(true)}>活体采集</Button>
         <Button type="primary" onClick={() => setOpen(true)}>新建会话</Button>
       </div>
 
@@ -291,6 +318,8 @@ export function SessionsPage() {
           />
         </Form>
       </Modal>
+
+      <LiveCapture open={captureOpen} onClose={() => setCaptureOpen(false)} />
     </div>
   );
 }
@@ -307,7 +336,7 @@ function AssetUpload({
   accept: string;
   title: string;
   hint: string;
-  onPick: (a: AssetRef) => void;
+  onPick: (a: AssetRef, file: File) => void;
 }) {
   const [busy, setBusy] = useState(false);
   return (
@@ -323,7 +352,8 @@ function AssetUpload({
             ? await probeDuration(file)
             : (await probeSeries(file)).duration_seconds;
         setBusy(false);
-        onPick({ id: `${kind}:${file.name}`, name: file.name, size_bytes: file.size, duration_seconds, kind });
+        // 元数据探测逻辑不变；文件本体一并交给页面暂存，创建会话后由真实服务接收字节
+        onPick({ id: `${kind}:${file.name}`, name: file.name, size_bytes: file.size, duration_seconds, kind }, file);
         return false;
       }}
     >
