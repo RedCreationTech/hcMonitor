@@ -28,6 +28,7 @@ export interface Attribution {
 }
 
 export interface AnomalyEvent {
+  run_id?: string; participant_id?: string | null; source_event_ids?: string[];
   event: 'anomaly';
   id: string;
   session_id: string;
@@ -76,7 +77,8 @@ export interface ImpactEvent {
 export interface DialogueTurn {
   event: 'dialogue';
   ts: number;
-  speaker: 'interviewer' | 'subject';
+  speaker: 'interviewer' | 'subject' | 'unknown' | 'overlap';
+  id?: string; end?: number; asset_id?: string; participant_id?: string | null; speaker_id?: string | null;
   text: string;
   speech_rate?: number;
   /** 说话人分离置信度；分离通道关停时为 null，界面据此把角色标为「未分离」 */
@@ -166,6 +168,7 @@ export type AssetKind = 'video' | 'audio' | 'nir' | 'mmwave';
 
 /** 一份上传素材的登记项。只存元数据（文件名 / 大小 / 时长），原型不落地文件内容 */
 export interface AssetRef {
+  upload_status?: string; sha256?: string;
   id: string;
   name: string;
   size_bytes: number;
@@ -219,6 +222,10 @@ export interface OfflineSlice {
 }
 
 export interface SessionSummary {
+  revision?: number; stale?: boolean; restricted?: boolean; current_run_id?: string;
+  participants?: Array<{ id: string; role: string; purposes: Record<string, boolean> }>;
+  primary_asset_id?: string;
+  corrections?: { turns: DialogueTurn[]; topics: Array<{ asset_id: string; boundary: [number, number]; label: string }> };
   id: string;
   subject_code: string;
   scene: string;
@@ -240,7 +247,7 @@ export interface SessionSummary {
   /** source=imported 时登记的全部素材文件：上传后每一份都进入批分析并出现在报告里 */
   assets?: AssetRef[];
   /** 离线批分析进行中：进度与当前阶段。跑完即清空，产物落在 offline */
-  offline_job?: { progress: number; stage: string; steps?: OfflineStageStep[] } | null;
+  offline_job?: { id?: string; status?: string; progress: number; stage: string; steps?: OfflineStageStep[] } | null;
   /** 离线批分析产物。与实时监看状态严格隔离：不写进 state.anomalies、不派发现场工单 */
   offline?: OfflineResult;
 }
@@ -256,6 +263,9 @@ export interface OfflineStageStep {
 /** 离线导入素材的批分析产物。可用模态由素材类型决定——音频没有画面帧，
  *  视觉与生理四路按「不可用」处理，其异常记入 suppressed 并写明原因，而不是给一个 0 分。 */
 export interface OfflineResult {
+  run_id?: string;
+  narrative?: { status: string; text?: string; reason?: string; citations?: unknown[] };
+  manifest?: unknown;
   finished_at: string;
   /** 首个主素材的类型，保留给旧导出件与历史报告读 */
   asset_kind: 'video' | 'audio';
@@ -285,6 +295,9 @@ export interface ReportRevision {
 }
 
 export interface Report {
+  preview_sections?: Array<{key: string; title: string; text: string}>;
+  version?: number; revision?: number; source_run_id?: string; content_hash?: string;
+  grants?: Array<{ id: string; recipient: string; purpose: string; actions: string[]; expires_at: number; revoked: boolean }>;
   id: string;
   session_id: string;
   subject_code: string;
@@ -333,7 +346,7 @@ export interface Rule {
   source: '内置' | '标注回流';
 }
 
-export type MemberRole = 'analyst' | 'reviewer' | 'collector' | 'admin';
+export type MemberRole = 'analyst' | 'reviewer' | 'collector' | 'admin' | 'reader' | 'auditor';
 
 export interface Member {
   id: string;

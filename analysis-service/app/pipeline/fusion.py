@@ -21,15 +21,16 @@ def _consolidate(events: list[RawEvent], gap_s: float = 60.0) -> list[RawEvent]:
     groups: dict[tuple, list[RawEvent]] = {}
     for e in events:
         if e.severity in ("INFO", "WARN"):
-            groups.setdefault((e.modality, e.type), []).append(e)
+            groups.setdefault((e.modality, e.type, e.asset_id, e.cap_note, e.participant_id), []).append(e)
         else:
             out.append(e)
-    for (mod, typ), xs in groups.items():
+    for (mod, typ, _asset, _cap, _person), xs in groups.items():
         xs.sort(key=lambda e: e.ts)
         cur = None
         for e in xs:
             if cur and e.ts - cur.window[1] < gap_s:
-                cur.window = (cur.window[0], e.window[1])
+                cur.window = (cur.window[0], max(cur.window[1], e.window[1]))
+                cur.member_ids = sorted(set(cur.member_ids + e.member_ids))
                 cur.confidence = max(cur.confidence, e.confidence)
                 cur.deviation = max(cur.deviation, e.deviation)
                 cur.metrics["合并条数"] = (cur.metrics.get("合并条数", (1, ""))[0] + 1, "条")
@@ -39,7 +40,7 @@ def _consolidate(events: list[RawEvent], gap_s: float = 60.0) -> list[RawEvent]:
                 cur = RawEvent(ts=e.ts, modality=mod, type=typ, severity=e.severity,
                                confidence=e.confidence, deviation=e.deviation,
                                window=e.window, metrics=dict(e.metrics),
-                               asset_id=e.asset_id, cap_note=e.cap_note)
+                               asset_id=e.asset_id, asset_ids=list(e.asset_ids), participant_id=e.participant_id, member_ids=list(e.member_ids), cap_note=e.cap_note)
         if cur:
             out.append(cur)
     return sorted(out, key=lambda e: e.ts)
@@ -74,6 +75,8 @@ def fuse(events: list[RawEvent], session_id: str,
                     confidence=round(min(0.95, max(e.confidence for e in in_win) + 0.1), 2),
                     deviation=max(e.deviation for e in in_win),
                     window=(start, end),
+                    member_ids=sorted({member for e in in_win for member in e.member_ids}),
+                    asset_ids=sorted({aid for e in in_win for aid in (e.asset_ids or [e.asset_id]) if aid}),
                     metrics={"命中模态": ("+".join(sorted(mods)), "模态"),
                              "未命中": ("+".join(missed) if missed else "无", "模态"),
                              "聚合条数": (len(in_win), "条"),
@@ -114,5 +117,6 @@ def to_contract_event(ev: RawEvent, seq: int, session_id: str,
             "conclusion": {},
         },
         "source_assets": source_assets or [],
+        "source_event_ids": ev.member_ids,
         "cap_note": ev.cap_note,
     }

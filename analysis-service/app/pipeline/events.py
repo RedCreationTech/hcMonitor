@@ -19,4 +19,7 @@ class RawEvent:
     window: tuple = (0.0, 0.0)       # 证据时段 (from, to)
     metrics: dict = field(default_factory=dict)   # {指标名: (值, 单位)}——观察层证据句原料
     asset_id: Optional[str] = None   # 证据素材
+    participant_id: Optional[str] = None
+    member_ids: list[str] = field(default_factory=list)
+    asset_ids: list[str] = field(default_factory=list)
     cap_note: Optional[str] = None   # 非 None = 趋势层封顶

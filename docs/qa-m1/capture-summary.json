@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "device": "Chrome synthetic camera+microphone; NOT physical device acceptance",
+  "source": "live",
+  "assetSealed": true,
+  "timeline": [
+    {
+      "at": 0,
+      "kind": "start"
+    },
+    {
+      "at": 2.539099999997765,
+      "kind": "pause"
+    },
+    {
+      "at": 3.289599999997765,
+      "kind": "resume"
+    },
+    {
+      "at": 5.13789999999851,
+      "kind": "stop"
+    }
+  ],
+  "localCacheCleared": true,
+  "consoleErrors": []
+}

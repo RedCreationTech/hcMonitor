@@ -152,6 +152,7 @@ def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
     hand_fi: list[int] = []           # 手部样本对应的处理帧号（接质量门用）
     hand_sig: list[tuple[bool, bool, float]] = []  # (手近脸, 双手互搓, 掌距px)
 
+    hand_seen = 0
     idx = -1
     while True:
         ok, frame = cap.read()
@@ -202,6 +203,7 @@ def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
             near = False
             palm_d = float("nan")
             if hl:
+                hand_seen += 1
                 h, w = frame.shape[:2]
                 wrists = [np.array([h_.landmark[0].x * w, h_.landmark[0].y * h]) for h_ in hl]
                 nose = np.array(face["nose"])
@@ -375,7 +377,7 @@ def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
         modality_available.append("face")
     if pose_rate >= 0.5:
         modality_available.append("pose")
-    modality_available.append("hand")
+    if hand_seen >= 3: modality_available.append("hand")
     quality = "ok" if (not degraded_segs and face_rate >= 0.8) else "degraded"
     notes = [f"人脸检出率 {face_rate:.0%}（阈值 {FACE_RATE_MIN:.0%}）",
              f"Pose 检出率 {pose_rate:.0%}"]

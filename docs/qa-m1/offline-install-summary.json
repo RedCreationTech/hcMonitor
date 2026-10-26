@@ -1,0 +1,10 @@
+{
+  "platform": "same Intel Mac; relocated complete package + brand new venv",
+  "wheels": 141,
+  "hash_checked": true,
+  "no_index_install": true,
+  "postgres_restart": true,
+  "login": true,
+  "compiled_ui": true,
+  "physical_clean_os": false
+}

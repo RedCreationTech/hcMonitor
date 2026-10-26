@@ -19,39 +19,20 @@ from .events import RawEvent
 MOTION_DEGRADE = 15.0         # head_motion_pct 超此值降级
 
 
-def _load(csv_path: Path) -> tuple[dict[str, np.ndarray], float]:
-    with open(csv_path, newline="", encoding="utf-8", errors="ignore") as f:
-        rows = [r for r in csv.reader(f) if r]
-    header = None
-    start = 0
-    if rows:
-        try:
-            float(rows[0][0])
-        except ValueError:
-            header = [c.strip() for c in rows[0]]
-            start = 1
-    data = []
-    for r in rows[start:]:
-        try:
-            data.append([float(c) for c in r if c.strip() != ""])
-        except ValueError:
-            continue
-    mat = np.asarray(data)
-    cols = ({h: mat[:, i] for i, h in enumerate(header)}
-            if header and len(header) == mat.shape[1]
-            else {f"col{i}": mat[:, i] for i in range(mat.shape[1])})
-    t = cols.get("t_s", cols.get("time", np.arange(len(mat))))
-    duration = float(t[-1] - t[0]) if len(t) > 1 and t[-1] > t[0] else float(len(mat))
-    return cols, duration
+from .series import load as _load
 
 
 def _z_series(x: np.ndarray, fs: float, degraded: np.ndarray | None) -> tuple[np.ndarray, int]:
+    if degraded is not None and degraded.all(): raise ValueError("全部采样质量不合格，拒绝提取峰值")
     b, a = butter(2, 0.01 / (fs / 2), btype="high")
     xh = filtfilt(b, a, x)
     head = xh[: max(1, len(xh) // 5)]
-    base, scale = float(np.median(head)), float(np.std(head)) or 1.0
+    if degraded is not None: head=head[~degraded[:len(head)]]
+    if len(head)<3 or float(np.std(head))<1e-9: raise ValueError("基线有效样本不足或无变化，拒绝归一化")
+    base, scale = float(np.median(head)), float(np.std(head))
     z = (xh - base) / scale
     usable = z if degraded is None else z[~degraded]
+    if not len(usable): raise ValueError("全部采样质量不合格，拒绝提取峰值")
     peak_i = int(np.argmax(np.abs(usable)))
     if degraded is not None:
         idx = np.arange(len(z))
@@ -65,7 +46,7 @@ def run(csv_path: Path, out_dir: Path, asset_id: str | None = None) -> dict:
     n = len(next(iter(cols.values())))
     if n < 30:
         raise ValueError(f"fNIRS 序列有效行数不足：{n}")
-    fs = n / max(duration, 1e-6)
+    fs = (n-1) / max(duration, 1e-6)
 
     motion = cols.get("head_motion_pct")
     degraded = motion > MOTION_DEGRADE if motion is not None else None
@@ -87,7 +68,7 @@ def run(csv_path: Path, out_dir: Path, asset_id: str | None = None) -> dict:
             "series": [round(float(v), 2) for v in z[::step]],
         })
     if not metrics:                                  # 无表头：第一数值列兜底
-        z, peak_i = _z_series(next(iter(cols.values())), fs, degraded)
+        z, peak_i = _z_series(next((v for k, v in cols.items() if k not in ("t_s", "time")), np.array([])), fs, degraded)
         metrics.append({
             "name": "通道1（基线 z 分数）", "unit": "z", "decimals": 2,
             "baseline": 0.0, "peak": round(float(z[peak_i]), 2),

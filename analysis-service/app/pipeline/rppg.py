@@ -147,7 +147,7 @@ def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
     face_ok = np.array(face_ok, dtype=bool)
     face_rate = float(np.mean(face_ok)) if n else 0.0
 
-    if n < int(2 * WIN_S * fs):
+    if n < int(2 * WIN_S * fs) or not face_ok.any():
         return {"anomalies": [], "quality": "degraded",
                 "quality_note": f"有效样本不足（{n} 帧），无法估计心率",
                 "hr_series": []}
@@ -189,6 +189,9 @@ def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
     else:
         ts_a, rgb_a = ts, rgb
         lo, hi = 0, n
+
+    if len(rgb_a) < int(2 * WIN_S * fs):
+        return {"anomalies": [], "quality": "degraded", "quality_note": "连续有效面部片段不足，无法估计心率", "hr_series": []}
 
     # ── 带通（butter 3 阶 0.75-4Hz）→ POS 脉搏波 ──
     b, a = butter(3, [BAND[0], min(BAND[1], fs / 2 - 0.1)], btype="bandpass", fs=fs)
@@ -252,6 +255,8 @@ def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
         for h in hr_series:
             w.writerow([h["t"], h["hr"], h["rmssd"] if h["rmssd"] is not None else ""])
 
+    if not hr_series:
+        return {"anomalies": [], "quality": "degraded", "quality_note": "没有有效心率窗口", "hr_series": []}
     if not notes:
         notes.append(f"人脸检出率 {face_rate:.0%}，亮度变异系数 {bright_cv:.2f}，"
                      f"HR 基线 {base:.0f} bpm")

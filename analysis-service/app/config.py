@@ -1,17 +1,24 @@
-"""全局配置：路径、模型 ID、判定口径。
+"""M1固定路径、离线模型策略和判定口径。
 
-模型一律从 ModelScope 拉取（国内网络友好），缓存到 models/ 不入库。
-许可红线：全栈 Apache-2.0/MIT/BSD，禁用 openSMILE（商用禁令）、OpenFace（CMU 版税）、
-Ultralytics YOLO（AGPL）——选型理由见 docs/优化需求方案设计-7008111111.md §11。
+运行时只读取本地固定模型包；联网准备须显式设置MODEL_DOWNLOAD_POLICY=prepare。
+各依赖遵守自身许可证，以源文件/离线包记录为准，不概括为统一许可。
 """
+import os
+import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DATA = ROOT.parent / "data"
-MODELS = ROOT.parent / "models"
+DATA = Path(os.environ.get("DATA_ROOT", ROOT.parent / "data" / "m1"))
+MODELS = Path(os.environ.get("MODEL_ROOT", ROOT.parent / "models"))
 UPLOADS = DATA / "uploads"          # 会话素材原文
 ARTIFACTS = DATA / "artifacts"      # 每会话中间产物（转写/特征/AU 时序…可出示取证）
 STORE = DATA / "store.json"         # 会话/报告/审计的状态库
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+OFFLINE = os.environ.get("MODEL_DOWNLOAD_POLICY", "offline") != "prepare"
+FFMPEG = os.environ.get("FFMPEG_BIN", shutil.which("ffmpeg") or "ffmpeg")
+FFPROBE = os.environ.get("FFPROBE_BIN", shutil.which("ffprobe") or "ffprobe")
+MAX_UPLOAD_BYTES = int(os.environ.get("UPLOAD_LIMIT", 1024 * 1024 * 1024))
+LLM_PATH = Path(os.environ.get("LLM_PATH", MODELS / "qwen2.5-0.5b-instruct-q4_k_m.gguf"))
 
 # ── ModelScope 模型 ID ──────────────────────────────────────────────
 MS_ASR = "iic/SenseVoiceSmall"                    # 主选：非自回归，中文 CPU 17× 实时，附情感标签
@@ -22,10 +29,10 @@ MS_DIAR = "iic/speech_campplus_speaker-diarization_common"   # VAD+CAM++ 一体�
 MS_EMBED = "BAAI/bge-m3"                          # 话题切分 embedding
 NLI_HF = "IDEA-CCNL/Erlangshen-Roberta-330M-NLI"  # 中文 NLI 矛盾初筛（ModelScope 无镜像，走 HF；
                                                   #  下载失败时设 HF_ENDPOINT=https://hf-mirror.com）
-MS_LLM_GGUF = "Qwen/Qwen2.5-7B-Instruct-GGUF"     # 归因叙述组装（Q4_K_M）
+MS_LLM_GGUF = "Qwen/Qwen2.5-0.5B-Instruct-GGUF"     # 归因叙述组装（Q4_K_M）
 
 # ── 判定口径 ─────────────────────────────────────────────────────────
-PIPELINE_VERSION = "real-1.0"     # 与实时链共用的口径版本号（导出件对账读这一行）
+PIPELINE_VERSION = "m1-2.0"     # 与实时链共用的口径版本号（导出件对账读这一行）
 DISCLAIMER = ("本系统输出行为风险提示，不构成临床心理诊断；所有结论为模型推断，"
               "最终判断由现场人员与后方分析师共同作出。")
 
@@ -43,3 +50,10 @@ MODALITY_LABEL = {
     "voice": "语音", "semantic": "语义", "face": "表情",
     "pose": "姿态", "hand": "手部", "physio": "生理",
 }
+
+# Runtime has no network model resolution. Preparation is an explicit operator command.
+if OFFLINE:
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")

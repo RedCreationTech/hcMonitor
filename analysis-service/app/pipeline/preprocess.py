@@ -7,9 +7,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from ..config import SR
-
-FFMPEG = "/usr/local/bin/ffmpeg"
+from ..config import SR, FFMPEG
 
 
 def audio_to_wav(path: str | Path) -> Path:
@@ -17,7 +15,7 @@ def audio_to_wav(path: str | Path) -> Path:
     src = Path(path)
     if not src.exists():
         raise FileNotFoundError(f"音频素材不存在: {src}")
-    dst = src.with_name(src.stem + ".16k.wav")
+    dst = src.with_name(src.name + ".16k.wav")
     if dst.exists() and dst.stat().st_size > 0:
         return dst                                  # 缓存命中
     cmd = [FFMPEG, "-hide_banner", "-y", "-nostdin",

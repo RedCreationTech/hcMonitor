@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "kind": "report-layer regression, reuses frozen real inference",
+  "old_version_unchanged": true,
+  "old_report_id": "RP-cdb4730b18c94123",
+  "new_report_id": "RP-342598df803d4aba",
+  "new_version": 3,
+  "frozen_presentation": true,
+  "fixed_quality_appendix": true,
+  "code_snapshot_files": 27,
+  "exports": [
+    {
+      "format": "pdf",
+      "sha256": "995957d370342797279905c9bb2b313a6d490a317adea46c6249260b59fa89e6",
+      "bytes": 73237
+    },
+    {
+      "format": "html",
+      "sha256": "972fa520725c03900f798aa46b68b792d44e56e733ea0a655b8e8d4d8388be0c",
+      "bytes": 20085
+    },
+    {
+      "format": "csv",
+      "sha256": "a89ac48b7deaca012ea816516d94b2dba599fab092ae01afb97cb93d8c13d763",
+      "bytes": 6818
+    }
+  ],
+  "audit_chain": true
+}

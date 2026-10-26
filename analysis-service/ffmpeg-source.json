@@ -1,0 +1,16 @@
+[
+  {
+    "name": "ffmpeg",
+    "version": "7.1.1",
+    "source": "https://evermeet.cx/ffmpeg/ffmpeg-7.1.1.zip",
+    "archive_sha256": "8d7917c1cebd7a29e68c0a0a6cc4ecc3fe05c7fffed958636c7018b319afdda4",
+    "binary_sha256": "23fb76dd559e155e49b9808b86ab5117f297b76294a798e4ef6cbb12fd15a689"
+  },
+  {
+    "name": "ffprobe",
+    "version": "7.1.1",
+    "source": "https://evermeet.cx/ffmpeg/ffprobe-7.1.1.zip",
+    "archive_sha256": "5a0a77d5e0c689f7b577788e286dd46b2c6120babd14301cce7a79fcfd3f7d28",
+    "binary_sha256": "f7928a29c68c15cad6ef95b759d40477e3c97a3e74ff8ca69412d09f5889e9f6"
+  }
+]

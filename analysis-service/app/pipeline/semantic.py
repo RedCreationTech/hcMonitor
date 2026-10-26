@@ -93,13 +93,14 @@ def _compress_label(text: str) -> str:
 
 def _turn_end(turns: list, i: int) -> float:
     """句末时刻：取下一句 ts；末句按字数 4 字/秒估算。"""
+    if turns[i].get("end", 0) > turns[i]["ts"]: return float(turns[i]["end"])
     if i + 1 < len(turns):
         return float(turns[i + 1]["ts"])
     rate = turns[i].get("speech_rate") or 4.0
     return float(turns[i]["ts"]) + max(3.0, len(turns[i]["text"]) / max(rate, 1.0))
 
 
-def run(turns: list, out_dir: Path) -> dict:
+def run(turns: list, out_dir: Path, topics_override: list | None = None) -> dict:
     """turns（DialogueTurn 字典）→ {impacts: ImpactEvent 形状, anomalies: RawEvent}。"""
     sm_dir = Path(out_dir) / "semantic"
     sm_dir.mkdir(parents=True, exist_ok=True)
@@ -118,17 +119,24 @@ def run(turns: list, out_dir: Path) -> dict:
         topics.append(list(range(prev, c)))
         prev = c
 
+    if topics_override:
+        topics = [[i for i,t in enumerate(turns) if boundary['boundary'][0] <= t['ts'] < boundary['boundary'][1]] for boundary in topics_override]
+        topics = [indices for indices in topics if indices]
+
     t0_all = float(turns[0]["ts"])
     t_end_all = max(_turn_end(turns, len(turns) - 1), t0_all + 1.0)
+    if topics_override:
+        t0_all=min(t0_all,min(b['boundary'][0] for b in topics_override))
+        t_end_all=max(t_end_all,max(b['boundary'][1] for b in topics_override))
     span_all = t_end_all - t0_all
 
     # ── 情绪极性（NLI 零样本）────────────────────────────────────────────
     polar = [_polarity(t) for t in texts]
 
     # ── 矛盾检测：相隔 ≥2 轮的 subject 陈述句对 ────────────────────────────
-    stmt_idx = [i for i, t in enumerate(turns) if _is_statement(t)]
+    stmt_idx = [i for i, t in enumerate(turns) if _is_statement(t) and t.get("participant_id")]
     pairs = [(i, j) for x, i in enumerate(stmt_idx)
-             for j in stmt_idx[x + 1:] if j - i >= PAIR_GAP]
+             for j in stmt_idx[x + 1:] if j - i >= PAIR_GAP and turns[i]["participant_id"]==turns[j]["participant_id"]]
     if len(pairs) > MAX_PAIRS:                     # 均匀采样封顶，避免 CPU 上组合爆炸
         step = len(pairs) / MAX_PAIRS
         pairs = [pairs[int(k * step)] for k in range(MAX_PAIRS)]
@@ -148,6 +156,9 @@ def run(turns: list, out_dir: Path) -> dict:
 
     # ── 影响值 + 四维分解 ────────────────────────────────────────────────
     def _topic_span(idxs: list[int]) -> tuple[float, float]:
+        if topics_override:
+            boundary=next(b for b in topics_override if b['boundary'][0] <= turns[idxs[0]]['ts'] < b['boundary'][1])
+            return tuple(boundary['boundary'])
         return float(turns[idxs[0]]["ts"]), max(_turn_end(turns, idxs[-1]),
                                                 float(turns[idxs[-1]]["ts"]) + 1.0)
 
@@ -179,6 +190,8 @@ def run(turns: list, out_dir: Path) -> dict:
         ts_from, ts_to = _topic_span(idxs)
         label = next((_compress_label(turns[i]["text"]) for i in idxs
                       if len(_LABEL_RE.findall(turns[i]["text"])) >= 4), "（无文本）")
+        if topics_override:
+            label=next(b['label'] for b in topics_override if b['boundary'][0] <= ts_from < b['boundary'][1])
         score = round(raw_impact[n] / top_impact, 3) if top_impact > 0 else 0.0
         impacts.append({
             "event": "impact",
@@ -197,7 +210,7 @@ def run(turns: list, out_dir: Path) -> dict:
                 "利益相关=话题内(金额|责任|时间)关键词命中数/全局最大，"
                 "持续影响=话题时长占比。"
             ),
-            "boundary_evidence": "由 bge-m3 相似度变化点判定（相邻句 cosine 相似度 < 0.55）",
+            "boundary_evidence": "人工修订边界；全部语义指标重算" if topics_override else "由 bge-m3 相似度变化点判定（相邻句 cosine 相似度 < 0.55）",
         })
 
     # ── 矛盾 → RawEvent（semantic 模态）───────────────────────────────────

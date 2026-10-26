@@ -5,7 +5,9 @@ import { statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const B = 'http://127.0.0.1:5185/v1';
+const origin = process.env.M1_MOCK_ORIGIN || 'http://127.0.0.1:5186';
+const B = origin + '/v1';
+if ((await (await fetch(B + '/health')).json()).mode !== 'mock') throw new Error('拒绝在真实服务运行模拟数据脚本');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const size = (p) => statSync(join(root, 'public/demo', p)).size;
 

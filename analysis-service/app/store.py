@@ -1,94 +1,105 @@
-"""状态库：JSON 文件持久化 + R6 审计哈希链。
+"""Transactional aggregate repository. PostgreSQL deployment; SQLite isolated tests.
 
-hash = sha256(seq|ts|actor|action|resource|prev_hash)，抽改任一条其后全部断裂。
-与 mock 引擎同口径，导出件 audit_seq 对账读这里。
+Legacy JSON is imported only by the explicit migration command. A row lock
+serializes separate writers; business changes and audit commit together.
 """
 from __future__ import annotations
-
+import copy
 import hashlib
 import json
+import sqlite3
 import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
+from .config import DATA, DATABASE_URL
 
-from .config import STORE, DATA
+
+def empty_db():
+    return dict(sessions=[], reports=[], audit=[], seq=0, users=[], tokens={}, jobs=[],
+                runs=[], exports=[], projects=[], idempotency={}, events=[])
 
 
 class Store:
-    def __init__(self, path: Path = STORE):
-        self.path = path
+    def __init__(self, path: Path | None = None, database_url: str | None = None):
         self.lock = threading.RLock()
-        DATA.mkdir(parents=True, exist_ok=True)
-        if path.exists():
-            self.db = json.loads(path.read_text("utf-8"))
+        self.local = threading.local()
+        url = DATABASE_URL if database_url is None else database_url
+        self.postgres = bool(url)
+        if self.postgres:
+            import psycopg
+            self.conn = psycopg.connect(url, autocommit=True)
+            self.conn.execute("CREATE TABLE IF NOT EXISTS minddialogue_state (id INTEGER PRIMARY KEY, payload JSONB NOT NULL)")
+            self.conn.execute("INSERT INTO minddialogue_state VALUES (1, %s::jsonb) ON CONFLICT DO NOTHING", (json.dumps(empty_db()),))
         else:
-            self.db = {"sessions": [], "reports": [], "audit": [], "seq": 0,
-                       "exports": 0}
-            self._save()
+            target = Path(path) if path else DATA / 'workspace.sqlite3'
+            target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            self.conn = sqlite3.connect(str(target), check_same_thread=False, isolation_level=None, timeout=30)
+            self.conn.execute('PRAGMA journal_mode=WAL')
+            self.conn.execute('CREATE TABLE IF NOT EXISTS minddialogue_state (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)')
+            self.conn.execute('INSERT OR IGNORE INTO minddialogue_state VALUES (1, ?)', (json.dumps(empty_db()),))
 
-    def _save(self):
-        tmp = self.path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(self.db, ensure_ascii=False, indent=1), "utf-8")
-        tmp.replace(self.path)
-
-    # ── 审计链 ────────────────────────────────────────────────────
-    def audit(self, actor: str, action: str, resource: str) -> dict:
+    @contextmanager
+    def transaction(self):
         with self.lock:
-            self.db["seq"] += 1
-            seq = self.db["seq"]
-            prev = self.db["audit"][-1]["hash"] if self.db["audit"] else "GENESIS"
-            now = time.time()
-            raw = f"{seq}|{now:.3f}|{actor}|{action}|{resource}|{prev}"
-            h = hashlib.sha256(raw.encode()).hexdigest()
-            entry = {"seq": seq, "ts": round(now, 3), "actor": actor,
-                     "action": action, "resource": resource,
-                     "prev_hash": prev, "hash": h}
-            self.db["audit"].append(entry)
-            self._save()
-            return entry
+            if getattr(self.local, 'db', None) is not None:
+                yield self.local.db
+                return
+            self.conn.execute('BEGIN' if self.postgres else 'BEGIN IMMEDIATE')
+            try:
+                row = self.conn.execute('SELECT payload FROM minddialogue_state WHERE id=1' + (' FOR UPDATE' if self.postgres else '')).fetchone()[0]
+                self.local.db = row if isinstance(row, dict) else json.loads(row)
+                yield self.local.db
+                payload = json.dumps(self.local.db, ensure_ascii=False, allow_nan=False)
+                sql = 'UPDATE minddialogue_state SET payload=%s::jsonb WHERE id=1' if self.postgres else 'UPDATE minddialogue_state SET payload=? WHERE id=1'
+                self.conn.execute(sql, (payload,))
+                self.conn.execute('COMMIT')
+            except BaseException:
+                self.conn.execute('ROLLBACK')
+                raise
+            finally:
+                self.local.db = None
 
-    def verify_chain(self) -> bool:
-        prev = "GENESIS"
-        for e in self.db["audit"]:
+    @property
+    def db(self):
+        if getattr(self.local, 'db', None) is not None:
+            return self.local.db
+        with self.lock:
+            row=self.conn.execute('SELECT payload FROM minddialogue_state WHERE id=1').fetchone()[0]
+            return copy.deepcopy(row) if isinstance(row,dict) else json.loads(row)
+
+    def audit(self, actor, action, resource):
+        with self.transaction() as db:
+            seq = db['seq'] = db.get('seq', 0) + 1
+            prev = db['audit'][-1]['hash'] if db['audit'] else 'GENESIS'
+            ts = round(time.time(), 3)
+            raw = f'{seq}|{ts:.3f}|{actor}|{action}|{resource}|{prev}'
+            e = dict(seq=seq, ts=ts, actor=actor, action=action, resource=resource,
+                     prev_hash=prev, hash=hashlib.sha256(raw.encode()).hexdigest())
+            db['audit'].append(e)
+            return copy.deepcopy(e)
+
+    def verify_chain(self):
+        snapshot=self.db
+        prev = 'GENESIS'
+        for e in snapshot['audit']:
             raw = f"{e['seq']}|{e['ts']:.3f}|{e['actor']}|{e['action']}|{e['resource']}|{prev}"
-            if e["prev_hash"] != prev or hashlib.sha256(raw.encode()).hexdigest() != e["hash"]:
+            if e['prev_hash'] != prev or hashlib.sha256(raw.encode()).hexdigest() != e['hash']:
                 return False
-            prev = e["hash"]
-        return True
+            prev = e['hash']
+        return len(snapshot['audit'])==snapshot.get('seq',0)
 
-    # ── 会话 / 报告 ───────────────────────────────────────────────
-    def sessions(self) -> list[dict]:
-        with self.lock:
-            return json.loads(json.dumps(self.db["sessions"]))
-
-    def reports(self) -> list[dict]:
-        with self.lock:
-            return json.loads(json.dumps(self.db["reports"]))
-
-    def get_session(self, sid: str) -> dict | None:
-        return next((s for s in self.sessions() if s["id"] == sid), None)
-
-    def get_report(self, rid: str) -> dict | None:
-        return next((r for r in self.reports() if r["id"] == rid), None)
-
-    def upsert_session(self, session: dict):
-        with self.lock:
-            xs = self.db["sessions"]
-            for i, s in enumerate(xs):
-                if s["id"] == session["id"]:
-                    xs[i] = session
-                    break
-            else:
-                xs.append(session)
-            self._save()
-
-    def upsert_report(self, report: dict):
-        with self.lock:
-            xs = self.db["reports"]
-            for i, r in enumerate(xs):
-                if r["id"] == report["id"]:
-                    xs[i] = report
-                    break
-            else:
-                xs.append(report)
-            self._save()
+    def collection(self, name): return copy.deepcopy(self.db.get(name, []))
+    def get(self, name, identifier): return next((x for x in self.collection(name) if x['id'] == identifier), None)
+    def put(self, name, record):
+        with self.transaction() as db:
+            xs = db.setdefault(name, [])
+            i = next((i for i, x in enumerate(xs) if x['id'] == record['id']), None)
+            if i is None: xs.append(copy.deepcopy(record))
+            else: xs[i] = copy.deepcopy(record)
+    def sessions(self): return self.collection('sessions')
+    def reports(self): return self.collection('reports')
+    def get_session(self, sid): return self.get('sessions', sid)
+    def get_report(self, rid): return self.get('reports', rid)
+    def upsert_session(self, session): self.put('sessions', session)
+    def upsert_report(self, report): self.put('reports', report)

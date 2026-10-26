@@ -8,13 +8,18 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from .config import MODELS
+from .config import MODELS, OFFLINE
 
 RETRIES = 3
 
 
 def ms_download(model_id: str) -> Path:
     """ModelScope 模型 → models/<model_id>，重试 3 次。"""
+    local = MODELS / "models" / model_id.replace("/", "--") / "snapshots" / "master"
+    alternatives = [local, MODELS / model_id]
+    found = next((p for p in alternatives if p.is_dir() and any(p.iterdir())), None)
+    if found: return found
+    if OFFLINE: raise RuntimeError(f"离线模型未就绪: {model_id}；请导入模型包")
     from modelscope import snapshot_download
 
     last_err: Exception | None = None
@@ -31,6 +36,9 @@ def ms_download(model_id: str) -> Path:
 
 def hf_download(repo_id: str) -> Path:
     """HuggingFace 模型 → models/<repo_id 末段>，被墙时自动切 hf-mirror 重试。"""
+    target = MODELS / repo_id.split("/")[-1]
+    if (target / "config.json").exists(): return target
+    if OFFLINE: raise RuntimeError(f"离线模型未就绪: {repo_id}；请导入模型包")
     from huggingface_hub import snapshot_download
 
     target = MODELS / repo_id.split("/")[-1]

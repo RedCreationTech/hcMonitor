@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "fixture": "Chrome synthetic camera/microphone; actual local ASR, not human accuracy",
+  "gaps": [
+    {
+      "at": 2.55239999999851,
+      "kind": "pause"
+    }
+  ],
+  "turns": 1,
+  "events": 0,
+  "impacts": 0,
+  "continuous_measurements": "abstained",
+  "quality": "采集含未可靠映射至文件轴的暂停/设备故障；本轮仅转写与回看，连续声学/视觉/生理指标、话题影响和心理解释均弃权。"
+}

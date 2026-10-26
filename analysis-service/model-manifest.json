@@ -1,0 +1,232 @@
+[
+  {
+    "path": "Erlangshen-Roberta-330M-NLI/config.json",
+    "bytes": 932,
+    "sha256": "1dcc9308ca02974f27842df7037becc7e1bcf2df97427933fdd32f6db410fa70"
+  },
+  {
+    "path": "Erlangshen-Roberta-330M-NLI/pytorch_model.bin",
+    "bytes": 1302263725,
+    "sha256": "1d48f343eb77965dba8443c66116674178693e62406b8a340661197cec7eca0e"
+  },
+  {
+    "path": "Erlangshen-Roberta-330M-NLI/vocab.txt",
+    "bytes": 109540,
+    "sha256": "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/1_Pooling/config.json",
+    "bytes": 191,
+    "sha256": "e54c164a07274f2eb45bb724f54a79d1efcc90c41573887cd9a29aeee0597352"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/colbert_linear.pt",
+    "bytes": 2100674,
+    "sha256": "19bfbae397c2b7524158c919d0e9b19393c5639d098f0a66932c91ed8f5f9abb"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/config.json",
+    "bytes": 687,
+    "sha256": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/config_sentence_transformers.json",
+    "bytes": 123,
+    "sha256": "1eef72430e7194a1e59680e635aed81ffa083f05668dbc5bb1c56c04c0999c38"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/configuration.json",
+    "bytes": 77,
+    "sha256": "007c616ed9187f4f3d6096ed2d55cece33c3f48866dbd7bc6afefcb9645a37c1"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/modules.json",
+    "bytes": 349,
+    "sha256": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/onnx/config.json",
+    "bytes": 698,
+    "sha256": "f24afd5de914fba8c668426c43d208a1a54022500c63b2c160be20891686fce8"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/onnx/sentencepiece.bpe.model",
+    "bytes": 5069051,
+    "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/onnx/special_tokens_map.json",
+    "bytes": 964,
+    "sha256": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/onnx/tokenizer.json",
+    "bytes": 17082821,
+    "sha256": "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/onnx/tokenizer_config.json",
+    "bytes": 1173,
+    "sha256": "7e4c1cc848840aeccdd763458c18dd525eb0f795c992e00ebe9c28554e7db2d4"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/pytorch_model.bin",
+    "bytes": 2271145830,
+    "sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/sentence_bert_config.json",
+    "bytes": 54,
+    "sha256": "eb9b44b13c0f52a3b3685c3b1cbdea1ba8b04bea123b98f61610048940776eb1"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/sentencepiece.bpe.model",
+    "bytes": 5069051,
+    "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/sparse_linear.pt",
+    "bytes": 3516,
+    "sha256": "45c93804d2142b8f6d7ec6914ae23a1eee9c6a1d27d83d908a20d2afb3595ad9"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/special_tokens_map.json",
+    "bytes": 964,
+    "sha256": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/tokenizer.json",
+    "bytes": 17098108,
+    "sha256": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08"
+  },
+  {
+    "path": "models/BAAI--bge-m3/snapshots/master/tokenizer_config.json",
+    "bytes": 444,
+    "sha256": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4"
+  },
+  {
+    "path": "models/iic--SenseVoiceSmall/snapshots/master/chn_jpn_yue_eng_ko_spectok.bpe.model",
+    "bytes": 377341,
+    "sha256": "aa87f86064c3730d799ddf7af3c04659151102cba548bce325cf06ba4da4e6a8"
+  },
+  {
+    "path": "models/iic--SenseVoiceSmall/snapshots/master/config.yaml",
+    "bytes": 1855,
+    "sha256": "f71e239ba36705564b5bf2d2ffd07eece07b8e3f2bbf6d2c99d8df856339ac19"
+  },
+  {
+    "path": "models/iic--SenseVoiceSmall/snapshots/master/configuration.json",
+    "bytes": 396,
+    "sha256": "02810a7f8e9e8aee10370a265f7e799728ce25b4c00cdbf4602b303ee395a38e"
+  },
+  {
+    "path": "models/iic--SenseVoiceSmall/snapshots/master/model.pt",
+    "bytes": 936291369,
+    "sha256": "833ca2dcfdf8ec91bd4f31cfac36d6124e0c459074d5e909aec9cabe6204a3ea"
+  },
+  {
+    "path": "models/iic--SenseVoiceSmall/snapshots/master/tokens.json",
+    "bytes": 352064,
+    "sha256": "a2594fc1474e78973149cba8cd1f603ebed8c39c7decb470631f66e70ce58e97"
+  },
+  {
+    "path": "models/iic--punc_ct-transformer_zh-cn-common-vocab272727-pytorch/snapshots/master/config.yaml",
+    "bytes": 810,
+    "sha256": "a56ec10925b06fa976ad51af373396be2b13e1eb8dc62a5426b5adebaba7071d"
+  },
+  {
+    "path": "models/iic--punc_ct-transformer_zh-cn-common-vocab272727-pytorch/snapshots/master/configuration.json",
+    "bytes": 373,
+    "sha256": "ebca5ff883e03585b2eec84ce80573f851658bdc61f2887db7d076afe6facd91"
+  },
+  {
+    "path": "models/iic--punc_ct-transformer_zh-cn-common-vocab272727-pytorch/snapshots/master/example/punc_example.txt",
+    "bytes": 863,
+    "sha256": "1905542a6e78e344504a3b56cbc772eb391a20eb7eac71830f837852b558dd0c"
+  },
+  {
+    "path": "models/iic--punc_ct-transformer_zh-cn-common-vocab272727-pytorch/snapshots/master/model.pt",
+    "bytes": 291979892,
+    "sha256": "a5818bb9d933805a916eebe41eb41648f7f9caad30b4bd59d56f3ca135421916"
+  },
+  {
+    "path": "models/iic--punc_ct-transformer_zh-cn-common-vocab272727-pytorch/snapshots/master/tokens.json",
+    "bytes": 4207480,
+    "sha256": "c960ab87bccea4aa15cf49a59f71973c2c330b46668048cd8da253749ec71ee3"
+  },
+  {
+    "path": "models/iic--speech_campplus_speaker-diarization_common/snapshots/master/config.yaml",
+    "bytes": 538,
+    "sha256": "dc99defb2de71fe20e800f14b5c644645607a63cffeb60b5c9f1321d621b61b9"
+  },
+  {
+    "path": "models/iic--speech_campplus_speaker-diarization_common/snapshots/master/configuration.json",
+    "bytes": 507,
+    "sha256": "406f6ec313e6e359b6d8605afaa520a3180b5ac33ef2e4e90114a92e3f886dd1"
+  },
+  {
+    "path": "models/iic--speech_campplus_sv_zh-cn_16k-common/snapshots/master/campplus_cn_common.bin",
+    "bytes": 28036335,
+    "sha256": "3388cf5fd3493c9ac9c69851d8e7a8badcfb4f3dc631020c4961371646d5ada8"
+  },
+  {
+    "path": "models/iic--speech_campplus_sv_zh-cn_16k-common/snapshots/master/config.yaml",
+    "bytes": 537,
+    "sha256": "17342041bd5b22f6fd7e32f6e7a267b0bf65f018c0a721bada6547e3d28fbfc9"
+  },
+  {
+    "path": "models/iic--speech_campplus_sv_zh-cn_16k-common/snapshots/master/configuration.json",
+    "bytes": 581,
+    "sha256": "6f7acaf1e81ca121f4a3c71b6ddb66beec24350a3ef330e2c846f17829176a8f"
+  },
+  {
+    "path": "models/iic--speech_campplus_sv_zh-cn_16k-common/snapshots/master/requirements.txt",
+    "bytes": 19,
+    "sha256": "c6d1bd9fd0c46b2cd29a6dab9859d99355e8c621dd726d4cde5c1d650c8faca0"
+  },
+  {
+    "path": "models/iic--speech_fsmn_vad_zh-cn-16k-common-onnx/snapshots/master/config.yaml",
+    "bytes": 1215,
+    "sha256": "2ef334f2d7776edd86ed696296774f87550206c256bfabc597872ad861831589"
+  },
+  {
+    "path": "models/iic--speech_fsmn_vad_zh-cn-16k-common-onnx/snapshots/master/configuration.json",
+    "bytes": 598,
+    "sha256": "f62fcbcebbaade798714b34c521cad87d869ee6a327ceed948e01ff2336bbfc0"
+  },
+  {
+    "path": "models/iic--speech_fsmn_vad_zh-cn-16k-common-pytorch/snapshots/master/config.yaml",
+    "bytes": 1215,
+    "sha256": "486861ca26ddb79081663b6179cb204c6bfae71c52f04aafc48a9e9d8dde1e93"
+  },
+  {
+    "path": "models/iic--speech_fsmn_vad_zh-cn-16k-common-pytorch/snapshots/master/configuration.json",
+    "bytes": 365,
+    "sha256": "7bce8867e37d55c3dd8f672695ced18077a2be199ea529a5d432d5350fc0acba"
+  },
+  {
+    "path": "models/iic--speech_fsmn_vad_zh-cn-16k-common-pytorch/snapshots/master/model.pt",
+    "bytes": 1721366,
+    "sha256": "b3be75be477f0780277f3bae0fe489f48718f585f3a6e45d7dd1fbb1a4255fc5"
+  },
+  {
+    "path": "narrative-manifest.json",
+    "bytes": 287,
+    "sha256": "58e80844332ea8c5052e7d29cf71d2558644ac8495b06da95b4d0f9f38575840"
+  },
+  {
+    "path": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+    "bytes": 491400032,
+    "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+  },
+  {
+    "path": "app/rules/rules.yaml",
+    "bytes": 5397,
+    "sha256": "940f360f512cf417cd2fed2dfa3bd33a4393085645ae66e28c73d7518aba9c78"
+  },
+  {
+    "path": "fonts/chinese.ttf",
+    "bytes": 10595892,
+    "sha256": "4696b858a669709884b6d257d578d3e0c0e6a578bbd2d5b7c87aa36fa5683ea8"
+  }
+]

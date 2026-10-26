@@ -1,0 +1,43 @@
+{
+  "fixture": "repository demo video cut to12s plus original file sensors; engineering smoke only",
+  "network": "socket.connect denied",
+  "data_root": "/Users/a123/Desktop/test/招投标/1022/精简版/analysis-service/data/qa-video-22f55448",
+  "slices": [
+    {
+      "kind": "video",
+      "quality": "degraded",
+      "quality_note": "；个人声学基线不足，不生成个人声学偏离；说话人身份待人工绑定；无个人基线或个人心理解释；人脸检出率 72%（阈值 60%）；Pose 检出率 72%；degraded 片段 1 段，首段起于 10s，已剔除出判定；有效样本不足（151 帧），无法估计心率",
+      "modality_available": [
+        "voice",
+        "semantic",
+        "face",
+        "pose",
+        "hand"
+      ]
+    },
+    {
+      "kind": "nir",
+      "quality": "ok",
+      "quality_note": "",
+      "modality_available": [
+        "physio"
+      ]
+    },
+    {
+      "kind": "mmwave",
+      "quality": "degraded",
+      "quality_note": "部分采样因运动伪迹降级；不生成事件",
+      "modality_available": [
+        "physio"
+      ]
+    }
+  ],
+  "events": 1,
+  "narrative": {
+    "status": "not_applicable",
+    "reason": "没有已确认归属且命中规则的证据",
+    "text": "",
+    "citations": []
+  },
+  "manifest_models": 46
+}

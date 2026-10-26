@@ -8,7 +8,7 @@
         流程（其 configuration.json 声明）：VAD 段 → CAM++ 说话人嵌入
         （speaker_model=iic/speech_campplus_sv_zh-cn_16k-common）→ 谱聚类（merge_thr=0.78）
 
-说话人归约：分角色总时长更长的一方 → interviewer（问话方），其余 → subject；
+匿名聚类只保留speaker_id，自动角色保持unknown；人工确认后通过校正版本绑定参与者。
 ASR 句段与分角色片段按重叠比例绑定（人数 >2 时天然取重叠最长者），
 无重叠 → diar_confidence=null、diar_state='degraded'。
 """
@@ -49,17 +49,10 @@ def _load():
         os.environ.setdefault("MODELSCOPE_CACHE", str(_MODELS))
         torch.set_num_threads(_CPU_THREADS)
         from funasr import AutoModel
-        vad_id = MS_VAD
-        try:                            # 先探测 VAD 可加载性，避免级联建两遍
-            AutoModel(model=vad_id, device="cpu", ncpu=_CPU_THREADS)
-        except RuntimeError as e:
-            if "not registered" not in str(e):
-                raise
-            print(f"[speech] {MS_VAD} 无 funasr 模型类（onnx 仓库），"
-                  f"退回 pytorch 版 {_VAD_FALLBACK}")
-            vad_id = _VAD_FALLBACK
-        _CASCADE = AutoModel(model=MS_ASR, vad_model=vad_id, punc_model=MS_PUNC,
-                             device="cpu", ncpu=_CPU_THREADS)
+        _CASCADE = AutoModel(model=str(ms_download(MS_ASR)),
+                             vad_model=str(ms_download(MS_VAD)),
+                             punc_model=str(ms_download(MS_PUNC)),
+                             device="cpu", ncpu=_CPU_THREADS, disable_update=True)
         # 分角色 pipeline 配置驱动：speaker_model + merge_thr 均读自 MS_DIAR 仓库
         from funasr.models.campplus.cluster_backend import ClusterBackend
         diar_dir = ms_download(MS_DIAR)
@@ -71,7 +64,7 @@ def _load():
                                "iic/speech_campplus_sv_zh-cn_16k-common"))
         if spk_id.startswith("damo/"):            # 旧命名空间 → iic（同一模型）
             spk_id = "iic/" + spk_id.split("/", 1)[1]
-        _SPK = AutoModel(model=spk_id, device="cpu", ncpu=_CPU_THREADS)
+        _SPK = AutoModel(model=str(ms_download(spk_id)), device="cpu", ncpu=_CPU_THREADS, disable_update=True)
         _CB = ClusterBackend(**cb_kwargs)
     return _CASCADE, _SPK, _CB
 
@@ -124,12 +117,12 @@ def _bind_spk(s_start: float, s_end: float,
 
 
 def _role_map(spk_segs: list[tuple[float, float, int]]) -> dict[int, str]:
-    """发言总时长最长 → interviewer，其余 → subject。"""
+    """只登记匿名聚类；不以发言时长推断访谈身份。"""
     total: dict[int, float] = {}
     for st, ed, spk in spk_segs:
         total[spk] = total.get(spk, 0.0) + (ed - st)
     ranked = sorted(total, key=lambda k: -total[k])
-    return {spk: ("interviewer" if i == 0 else "subject")
+    return {spk: ("unknown")
             for i, spk in enumerate(ranked)}
 
 
@@ -176,12 +169,15 @@ def run(wav_path: Path, out_dir: Path) -> dict:
         dur = s_end - s_start
         spk, conf = _bind_spk(s_start, s_end, diar_segs)
         if degraded or spk is None:
-            speaker, conf, state = "interviewer", None, "degraded"
+            speaker, conf, state = "unknown", None, "degraded"
         else:
             speaker, state = roles[spk], "ok"
         rate = round(_cjk_count(text) / dur, 2) if dur > 0 and _cjk_count(text) else None
         turns.append({
             "event": "dialogue",
+            "id": f"T-{len(turns)+1:04d}",
+            "end": round(s_end, 2),
+            "speaker_id": f"SPK-{spk}" if spk is not None else None,
             "ts": round(s_start, 2),
             "speaker": speaker,
             "text": text,

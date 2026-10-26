@@ -48,6 +48,9 @@ class Attribution(BaseModel):
 
 
 class AnomalyEvent(BaseModel):
+    run_id: Optional[str] = None
+    participant_id: Optional[str] = None
+    source_event_ids: list[str] = []
     event: Literal["anomaly"] = "anomaly"
     id: str
     session_id: str
@@ -66,7 +69,12 @@ class AnomalyEvent(BaseModel):
 class DialogueTurn(BaseModel):
     event: Literal["dialogue"] = "dialogue"
     ts: float
-    speaker: Literal["interviewer", "subject"]
+    id: str = ""
+    end: float = 0
+    speaker_id: Optional[str] = None
+    participant_id: Optional[str] = None
+    asset_id: Optional[str] = None
+    speaker: Literal["interviewer", "subject", "unknown", "overlap"]
     text: str
     speech_rate: Optional[float] = None
     diar_confidence: Optional[float] = None
@@ -128,6 +136,11 @@ class OfflineSlice(BaseModel):
 
 
 class OfflineResult(BaseModel):
+    schema_version: str = "2.0"
+    run_id: Optional[str] = None
+    narrative: dict = {}
+    manifest: dict = {}
+    raw_events: list[dict] = []
     finished_at: str
     asset_kind: Literal["video", "audio"]
     assets: list[AssetRef]

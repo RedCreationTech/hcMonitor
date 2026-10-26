@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "engine": "explicit synthetic fixture",
+  "sensorClock": 4,
+  "audioDuration": 3,
+  "csvNeverDecodedAsMedia": true,
+  "consoleErrors": []
+}

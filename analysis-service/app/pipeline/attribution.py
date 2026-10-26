@@ -44,6 +44,11 @@ def match_rule_ids(ev_type: str, modality: str, preset: list[str] | None) -> lis
 
 def fill_attribution(event: dict, rules: list[dict]) -> dict:
     """按事件类型补 L2 候选层（同模态全量列出，hit 标记），组装 L3 结论。"""
+    if event.get("cap_note"):
+        event["attribution"]["candidate_rules"] = []
+        event["attribution"]["conclusion"] = {"psych_state": "仅生理趋势，不作心理归因",
+            "confidence": event["confidence"], "counterfactual": event["cap_note"], "disclaimer": DISCLAIMER}
+        return event
     modality = event["modality"]
     matched = match_rule_ids(event["type"], modality,
                              event.pop("_matched_rule_ids", None))
@@ -78,53 +83,4 @@ def fill_attribution(event: dict, rules: list[dict]) -> dict:
     return event
 
 
-# ── LLM 叙述组装（可选层；DISABLE_LLM=1 或模型缺失时自动跳过）────────────────
-
-_LLM = None
-
-
-def _llm():
-    global _LLM
-    if _LLM is None:
-        from llama_cpp import Llama
-        gguf = next((MODELS / "Qwen2.5-7B-Instruct-GGUF").glob("*Q4_K_M*.gguf"), None)
-        if gguf is None:
-            return None
-        _LLM = Llama(model_path=str(gguf), n_ctx=4096, temperature=0, verbose=False)
-    return _LLM
-
-
-def llm_narrative(event: dict) -> dict | None:
-    """对单条事件生成归因叙述（JSON，引用回溯校验）。失败返回 None 不影响主链路。"""
-    if os.environ.get("DISABLE_LLM") == "1":
-        return None
-    rules = event["attribution"]["candidate_rules"]
-    hits = [r for r in rules if r["hit"]]
-    if not hits:
-        return None
-    llm = _llm()
-    if llm is None:
-        return None
-    rag = json.dumps(hits, ensure_ascii=False)
-    obs = json.dumps(event["attribution"]["observation"], ensure_ascii=False)
-    prompt = (
-        "你是行为分析报告的撰写助手。只能依据给定的规则条目叙述，禁止生成数值、"
-        "禁止添加规则中没有的结论。输出严格 JSON："
-        "{\"narrative\": string, \"citations\": [rule_id...]}，citations 必须来自给定规则。\n"
-        f"观察层：{obs}\n规则条目：{rag}\nJSON："
-    )
-    try:
-        out = llm.create_chat_completion(
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}, temperature=0)
-        text = out["choices"][0]["message"]["content"]
-        data = json.loads(text)
-        allowed = {r["rule_id"] for r in hits}
-        if not set(data.get("citations", [])) <= allowed:
-            return None                      # 引用越界 = 幻觉，丢弃
-        return {"narrative": data["narrative"], "citations": data["citations"]}
-    except Exception:
-        return None
-
-
-RULE_ID_RE = re.compile(r"^R-[A-Za-z]+-[A-Za-z0-9]+$")
+# Narrative generation is isolated in app.narrative; deterministic attribution stays here.

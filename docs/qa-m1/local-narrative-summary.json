@@ -1,0 +1,14 @@
+{
+  "status": "generated",
+  "text": "观察提示jitter 异常升高，规则提供候选解释：嗓音紧张（中度）；需要人工核验及排除替代因素。\n本系统输出行为风险提示，不构成临床心理诊断；所有结论为模型推断，最终判断由现场人员与后方分析师共同作出。",
+  "citations": [
+    {
+      "run_id": "SMOKE-REAL-LLM",
+      "event_id": "EV-001",
+      "rule_id": "R-Voice-Jitter"
+    }
+  ],
+  "model_hash": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+  "elapsed_seconds": 27.166,
+  "method": "local-constrained-clauses-v1"
+}

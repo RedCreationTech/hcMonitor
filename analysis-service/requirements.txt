@@ -35,3 +35,10 @@ llama-cpp-python       # Qwen2.5-7B-Instruct GGUF Q4_K_M（ModelScope 下载）
 
 # 正式版 PPT 生成
 python-pptx
+
+# M1 transaction storage, tests and offline Chinese report rendering
+psycopg[binary]==3.3.6
+reportlab==5.1.0
+pytest==9.1.1
+httpx==0.28.1
+pypdf==6.21.2

@@ -19,28 +19,7 @@ from .events import RawEvent
 MOTION_DEGRADE = 8.0          # mm，体动超此值区段降级
 
 
-def _load(csv_path: Path) -> tuple[dict[str, np.ndarray], float]:
-    with open(csv_path, newline="", encoding="utf-8", errors="ignore") as f:
-        rows = [r for r in csv.reader(f) if r]
-    header = None
-    start = 0
-    if rows and not _num(rows[0][0]):
-        header = [c.strip() for c in rows[0]]
-        start = 1
-    data = []
-    for r in rows[start:]:
-        try:
-            data.append([float(c) for c in r if c.strip() != ""])
-        except ValueError:
-            continue
-    mat = np.asarray(data)
-    if header and len(header) == mat.shape[1]:
-        cols = {h: mat[:, i] for i, h in enumerate(header)}
-    else:
-        cols = {f"col{i}": mat[:, i] for i in range(mat.shape[1])}
-    t = cols.get("t_s", cols.get("time", np.arange(len(mat))))
-    duration = float(t[-1] - t[0]) if len(t) > 1 and t[-1] > t[0] else float(len(mat))
-    return cols, duration
+from .series import load as _load
 
 
 def _num(s: str) -> bool:
@@ -54,10 +33,14 @@ def _num(s: str) -> bool:
 def _metric(name: str, unit: str, decimals: int, series: np.ndarray,
             degraded_mask: np.ndarray | None = None) -> dict:
     s = series.astype(float)
-    base = float(np.median(s[: max(1, len(s) // 5)]))
+    head=s[:max(1,len(s)//5)]
+    if degraded_mask is not None: head=head[~degraded_mask[:len(head)]]
+    if degraded_mask is not None and degraded_mask.all(): raise ValueError("全部采样质量不合格，拒绝提取峰值")
+    if len(head)<3: raise ValueError("基线有效样本不足")
+    base = float(np.median(head))
     usable = s if degraded_mask is None else s[~degraded_mask]
     if len(usable) == 0:
-        usable = s
+        raise ValueError("全部采样质量不合格，拒绝提取峰值")
     peak_i = int(np.argmax(np.abs(usable - base)))
     idx = np.arange(len(s))
     if degraded_mask is not None:
@@ -91,15 +74,19 @@ def run(csv_path: Path, out_dir: Path, asset_id: str | None = None) -> dict:
     if "hr_bpm" in cols:
         metrics.append(_metric("心率", "次/分", 1, cols["hr_bpm"], degraded))
     if not metrics:                                  # 原始波形退回：包络趋势，不估心率
-        raw = next(iter(cols.values()))
+        raw = next((v for k, v in cols.items() if k not in ("t_s", "time")), None)
+        if raw is None: raise ValueError("缺少测量通道")
         env = np.abs(raw - np.median(raw))
         win = max(5, n // 150)
         env = np.convolve(env, np.ones(win) / win, mode="same")[::win]
         env = env / (np.median(env[: max(1, len(env) // 5)]) or 1)
-        metrics.append(_metric("呼吸波形包络(归一)", "×基线", 2, env))
+        m=_metric("呼吸波形包络(归一)", "×基线", 2, env);m["peak_ts"]*=win;metrics.append(m)
+
+    for m in metrics:
+        m["peak_ts"] = round(m["peak_ts"] * duration / max(n - 1, 1), 2)
 
     trend = {
-        "sensor_label": "毫米波雷达（60GHz 文件级导入）",
+        "sensor_label": "毫米波文件导入（设备参数待核验）",
         "samples": int(n),
         "time_base": "素材登记时长",
         "metrics": metrics,
@@ -119,7 +106,7 @@ def run(csv_path: Path, out_dir: Path, asset_id: str | None = None) -> dict:
             w.writerow([round(cols[k][i], 3) for k in names])
 
     events: list[RawEvent] = []
-    for m in metrics[:2]:
+    for m in (metrics[:2] if quality == "ok" else []):
         base, peak = m["baseline"], m["peak"]
         if base > 0 and abs(peak - base) / base >= 0.25:
             direction = "升高" if peak > base else "下降"

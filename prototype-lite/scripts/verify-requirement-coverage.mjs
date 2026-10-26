@@ -2,7 +2,9 @@
  * 运行：npm run dev 后执行 node scripts/verify-requirement-coverage.mjs（约 70s，12x 加速回放） */
 import WebSocket from 'ws';
 
-const B = 'http://127.0.0.1:5185/v1';
+const origin = process.env.M1_MOCK_ORIGIN || 'http://127.0.0.1:5186';
+const B = origin + '/v1';
+if ((await (await fetch(B + '/health')).json()).mode !== 'mock') throw new Error('拒绝在真实服务运行模拟数据脚本');
 const post = async (p, body) => {
   const r = await fetch(B + p, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) });
   return { code: r.status, data: await r.json().catch(() => null) };
@@ -18,7 +20,7 @@ function listen(channels, seconds) {
     const out = {};
     channels.forEach((c) => (out[c] = { anomalies: [], impacts: [], turns: [] }));
     const socks = channels.map((c) => {
-      const ws = new WebSocket(`ws://127.0.0.1:5185/v1/analysis/stream?channel=${c}`);
+      const ws = new WebSocket(`${origin.replace(/^http/, 'ws')}/v1/analysis/stream?channel=${c}`);
       ws.on('message', (buf) => {
         const m = JSON.parse(buf.toString());
         if (m.event === 'anomaly') out[c].anomalies.push(m);

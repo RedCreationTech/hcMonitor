@@ -1,0 +1,13 @@
+{
+  "version": "16.15",
+  "source": "https://ftp.postgresql.org/pub/source/v16.15/postgresql-16.15.tar.bz2",
+  "sha256": "c1575341fa7bd40f5274ea465b34390f4dc64cdd0770af327005caaeb9f6b7ed",
+  "configure": [
+    "--without-icu",
+    "--without-readline",
+    "--without-zlib",
+    "--without-openssl"
+  ],
+  "compiler": "Apple clang 21.0.0, Xcode SDK macOS26.5",
+  "scope": "local Intel macOS runtime; no system package upgrade"
+}

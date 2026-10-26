@@ -1,3 +1,7 @@
+> **2026-10-26 M1交付更新**：当前默认真实服务，入口 http://127.0.0.1:5190；运行 `analysis-service/.venv/bin/python analysis-service/manage.py serve`。账号为本地随机口令，见私有 `analysis-service/data/m1/initial-credentials.json`，真实服务不接受演示口令1234。
+>
+> 先阅读 [M1自测报告](docs/M1自测报告.md)、[人工复测执行说明](docs/M1人工复测执行说明.md)、[架构与实施对照](docs/M1架构与实施对照.md)。以下2026-10-22原型索引、回放命令和历史截图保留作基线，不代表当前真实能力或本轮验收结论。模拟服务须显式 `npm run dev:mock`（5186），与真实业务库隔离。
+
 # 精简版 · 文件索引
 
 「言心」MindDialogue 精简版：**只保留分析工作台**，功能收敛为「多信号源素材上传分析 → 逐素材分析过程 → 汇总分析结果 → 分析报告」离线闭环。

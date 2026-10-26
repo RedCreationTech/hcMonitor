@@ -69,6 +69,7 @@ export function mockServer(): Plugin {
             ...('claimed_by' in r ? { claimed_by: r.claimed_by } : {}),
           });
         const body = async <T>() => (await readJson(req)) as T;
+        if (path === '/health' && method === 'GET') return send(200, { mode: 'mock', synthetic: true });
         const seg = (i: number) => path.split('/')[i];
         const actorOf = () => engine.state.viewer.person;
 

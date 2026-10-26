@@ -1,18 +1,16 @@
-# 依赖与构建产物
 node_modules/
 dist/
 .vite/
-
-# 系统与编辑器杂项
 .DS_Store
 *.log
 *.local
-
-# Python 分析服务
 analysis-service/.venv/
 __pycache__/
 *.pyc
-*.16k.wav                       # ffmpeg 转码缓存（运行时生成）
-analysis-service/models/        # 模型权重（ModelScope/HF 下载，不入库）
-analysis-service/data/          # 素材/中间产物/会话库（运行时生成）
+.pytest_cache/
+*.16k.wav
+# Runtime media, credentials, weights and artifacts never enter Git.
+analysis-service/models/
+analysis-service/data/
 analysis-service/*.task
+docs/qa-m1/runtime/

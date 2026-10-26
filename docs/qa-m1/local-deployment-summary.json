@@ -1,0 +1,29 @@
+{
+  "health": {
+    "status": "ok",
+    "pipeline": "m1-2.0",
+    "mode": "real",
+    "storage": "postgresql",
+    "initialized": true
+  },
+  "accounts": {
+    "W-02": {
+      "sessions": 0,
+      "reports": 0
+    },
+    "A-01": {
+      "sessions": 0,
+      "reports": 0,
+      "quarantined_tasks": 10,
+      "audit": {
+        "chain_ok": true,
+        "total": 14
+      }
+    },
+    "READ-01": {
+      "sessions": 0,
+      "reports": 0
+    }
+  },
+  "logout_revocation": true
+}

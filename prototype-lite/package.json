@@ -3,16 +3,21 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "「言心」MindDialogue 精简版 · 仅分析工作台离线闭环（需求编号 7008111111）",
+  "description": "言心 M1：本地批分析、证据校正、独立复核与版本授权报告",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "verify": "node scripts/verify-requirement-coverage.mjs",
-    "demo-multi": "node scripts/demo-multisource.mjs"
+    "demo-multi": "node scripts/demo-multisource.mjs",
+    "dev:mock": "ANALYSIS_MOCK=1 vite --port 5186",
+    "test:ui": "node scripts/verify-m1-ui.mjs",
+    "test:capture": "node scripts/verify-m1-capture.mjs",
+    "test:sensor": "node scripts/verify-m1-sensor.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
+    "@noble/hashes": "2.0.1",
     "antd": "^5.22.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -24,6 +29,7 @@
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "1.62.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "ws": "^8.18.0"

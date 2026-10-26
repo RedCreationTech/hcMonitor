@@ -136,7 +136,7 @@ def _baseline(rows: list[dict], dur: float) -> dict:
     cut = dur * BASELINE_FRAC
     base = [r for r in rows[1:] if r["end"] <= cut + 1e-6]
     if len(base) < 3:
-        base = rows[1:]
+        return {}
     out = {}
     for k in Z_THR:
         vals = np.array([r[k] for r in base
@@ -145,7 +145,8 @@ def _baseline(rows: list[dict], dur: float) -> dict:
             continue
         med = float(np.median(vals))
         mad = float(np.median(np.abs(vals - med))) * 1.4826
-        out[k] = (med, mad if mad > 1e-9 else float(np.std(vals)) + 1e-9)
+        if mad > 1e-9:
+            out[k] = (med, mad)
     return out
 
 
@@ -194,6 +195,7 @@ def _silence_events(runs: list[tuple[float, float]]) -> list[RawEvent]:
         severity="INFO", confidence=1.0, deviation=0.0,
         window=(float(s), float(e)),
         metrics={"静默时长": (round(e - s, 2), "秒")},
+        cap_note="仅低音量观察；无个人停顿偏离基线，不作心理解释",
     ) for s, e in runs]
 
 
@@ -204,8 +206,22 @@ def run(wav_path: Path, turns: list, out_dir: Path) -> dict:
     ac_dir.mkdir(parents=True, exist_ok=True)
 
     rows, meta = _window_table(wav_path)
-    base = _baseline(rows, meta["duration_s"])
-    events = _deviation_events(rows, base) + _silence_events(meta["whole"]["silence_runs"])
+    # Only windows entirely dominated by one confirmed participant enter a personal baseline.
+    base, events = {}, _silence_events(meta["whole"]["silence_runs"])
+    participants = sorted({t.get("participant_id") for t in turns if t.get("participant_id")})
+    for participant in participants:
+        own = [rows[0]]
+        for row in rows[1:]:
+            coverage = sum(max(0, min(row["end"], t.get("end", t["ts"])) - max(row["start"], t["ts"]))
+                           for t in turns if t.get("participant_id") == participant and t.get("speaker") not in ("unknown", "overlap"))
+            if coverage >= (row["end"] - row["start"]) * .8:
+                own.append(row)
+        individual = _baseline(own, meta["duration_s"])
+        base[participant] = individual
+        events.extend(_deviation_events(own, individual))
+    meta["baseline_status"] = "available" if any(base.values()) else "insufficient"
+    meta["baseline_policy"] = "confirmed participant / first20% / >=3 windows / nonzero MAD; no fallback"
+
 
     cols = ["start", "end", "f0_mean", "f0_std", "jitter", "shimmer",
             "hnr", "rms_db", "silence_ratio"]
@@ -215,8 +231,8 @@ def run(wav_path: Path, turns: list, out_dir: Path) -> dict:
         w.writerows([{c: r.get(c) for c in cols} for r in rows[1:]])   # 逐窗行（整段在 events.json）
     (ac_dir / "events.json").write_text(json.dumps({
         "meta": meta,
-        "baseline": {k: {"median": v[0], "mad_x14826": v[1]} for k, v in base.items()},
+        "baseline": {person: {k: {"median": v[0], "mad_x14826": v[1]} for k, v in values.items()} for person, values in base.items()},
         "events": [e.__dict__ for e in events],
     }, ensure_ascii=False, indent=1), "utf-8")
 
-    return {"anomalies": events}
+    return {"anomalies": events, "baseline_status": meta["baseline_status"]}
