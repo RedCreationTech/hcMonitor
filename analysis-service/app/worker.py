@@ -43,6 +43,8 @@ def draft_report(session,result,report_id,author):
     origin='现场录制，结束后批分析' if session['source']=='live' else '既有文件导入，离线批分析'
     gaps=(session.get('capture') or {}).get('gaps',[])
     capture_note=f' 客户端采集记录含{len(gaps)}个暂停/设备故障事件；文件内时间不等于包含暂停的现场耗时。' if gaps else ''
+    if (session.get('capture') or {}).get('mode')=='independent-segments-v1':
+        capture_note+=' 每个连续片段独立封存、分析与回看；暂停不进入连续窗口或跨段融合。'
     return dict(id=report_id,session_id=session['id'],project_id=session['project_id'],subject_code=session['subject_code'],
         title=session['scene']+'证据分析报告',status='drafting',family_id=session['id'],version=1,revision=1,source_run_id=result['run_id'],
         source_revision=session['revision'],source_hash=content_hash(result),author_id=author,reviewer_id=session['reviewer_id'],

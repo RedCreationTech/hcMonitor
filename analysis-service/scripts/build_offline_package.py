@@ -29,7 +29,7 @@ def build(target):
     for name in ('package.json','package-lock.json'):
         shutil.copy2(repo/'prototype-lite'/name,target/'prototype-lite'/name)
     (target/'docs').mkdir()
-    for name in ('M1人工复测执行说明.md','M1架构与实施对照.md','M1自测报告.md','M1实施记录.md'):
+    for name in ('M1人工复测执行说明.md','M1架构与实施对照.md','M1自测报告.md','M1实施记录.md','暂停录制分段分析方案.md'):
         shutil.copy2(repo/'docs'/name,target/'docs'/name)
     shutil.copy2(repo/'README.md',target/'README.md')
     (target/'fixtures').mkdir();shutil.copy2(root/'data/uploads/SES-20261024-001/谈话录音_音频样例_156s.m4a',target/'fixtures/demo-audio.m4a')

@@ -25,6 +25,7 @@ def document(report):
     for e in result['anomalies']:
         review=snapshot['reviews'].get(e['id'],{})
         evidence.append(f"{e['id']} · {e['ts']}秒 · {e['type']} · 素材 {','.join(a['id'] for a in e['source_assets'])}")
+        if e.get('segment_id'):evidence.append('连续区间：'+e['segment_id']+'；时刻已映射回原件文件秒数')
         evidence.append('观察：'+'；'.join(o['text'] for o in e['attribution']['observation']))
         evidence.append('行为判断：'+labels.get(review.get('behavior'),'未复核')+'；候选解释：'+labels.get(review.get('explanation'),'未复核'))
         evidence.append('复核依据：'+review.get('note',''))
@@ -34,6 +35,10 @@ def document(report):
     quality=[]
     for item in result.get('slices',[]):
         quality.append(f"{item['asset_name']}：质量 {item['quality']}；{item.get('quality_note','')}；个人基线 {item.get('baseline_status') or '不适用'}；不可用通道 {'、'.join(item.get('modality_unavailable',[])) or '见逐项说明'}")
+    intervals=result.get('manifest',{}).get('analysis_intervals')
+    if intervals:
+        quality.append('连续有效区间核验人：'+intervals['verified_by']+'；依据：'+intervals['note'])
+        quality.extend(f"素材 {r['asset_id']} 有效文件秒数 {r['start']}—{r['end']}；其余范围排除；不跨区间归一、基线或融合" for r in intervals['ranges'])
     if quality:sections.append(('系统能力与质量记录（固定附件）','\n'.join(quality)))
     sections.append(('附录：来源与逐条复核','\n'.join(evidence) or '本次无候选异常事件。'))
     narrative=result['narrative'];status={'generated':'本地模型已生成候选叙述','not_applicable':'本次无符合条件的叙述输入','degraded':'本地模型降级，使用确定性规则'}
@@ -43,6 +48,12 @@ def document(report):
     sections.append(('本地叙述与引用',text))
     sections.append(('原件指纹','\n'.join(f"{a['id']} {a['name']} SHA256 {a['sha256']}" for a in result['assets'])))
     manifest=result['manifest'];method=[DISCLAIMER,'方法：话题指数仅按文件内归一；不同文件独立时轴，不进行跨文件同窗升级。']
+    if intervals:method.append('本轮话题指数按连续有效区间分别归一；片段之间不直接比较，不将排除时长计作沉默。')
+    capture=manifest.get('capture') or {}
+    if capture.get('mode')=='independent-segments-v1':
+        method.append('暂停分段：每个连续片段为独立原件；现场时钟仅作采集记录，分析与回看使用各文件独立时轴。')
+        method.extend(f"素材 {p['asset_id']}：现场 {p['wall_start']:.3f}—{p['wall_end']:.3f}秒；结束原因 {p['closed_by']}" for p in capture['segments'])
+        method.extend(f"排除空片段 {p['id']}：{p['reason']}" for p in capture.get('omitted_segments',[]))
     runtime=manifest.get('environment',{})
     if runtime:
         method.append('运行环境：Python '+runtime['python']+'；'+runtime['platform'])
@@ -67,12 +78,13 @@ def render(report,fmt,recipient,purpose):
         return (markup+'</body></html>').encode(), 'text/html; charset=utf-8'
     if fmt=='csv':
         buf=io.StringIO(newline='');w=csv.writer(buf)
-        w.writerow(['report_id','version','content_hash','run_id','event_id','time_s','type','sources','observation','behavior','explanation','review_note','disclaimer'])
+        segmented=bool(report['snapshot']['result'].get('manifest',{}).get('analysis_intervals'))
+        w.writerow(['report_id','version','content_hash','run_id','event_id','time_s','type','sources','observation','behavior','explanation','review_note','disclaimer']+(['segment_id'] if segmented else []))
         for e in report['snapshot']['result']['anomalies']:
             review=report['snapshot']['reviews'].get(e['id'],{})
-            w.writerow([safe_csv(v) for v in [report['id'],report['version'],report['content_hash'],report['source_run_id'],e['id'],e['ts'],e['type'],json.dumps(e['source_assets'],ensure_ascii=False),json.dumps(e['attribution']['observation'],ensure_ascii=False),review.get('behavior'),review.get('explanation'),review.get('note'),frozen_disclaimer]])
+            w.writerow([safe_csv(v) for v in [report['id'],report['version'],report['content_hash'],report['source_run_id'],e['id'],e['ts'],e['type'],json.dumps(e['source_assets'],ensure_ascii=False),json.dumps(e['attribution']['observation'],ensure_ascii=False),review.get('behavior'),review.get('explanation'),review.get('note'),frozen_disclaimer]+([e.get('segment_id','')] if segmented else [])])
         # Empty evidence still carries the exact version and disclaimer.
-        if not report['snapshot']['result']['anomalies']: w.writerow([report['id'],report['version'],report['content_hash'],report['source_run_id'],'','','','','','','','',frozen_disclaimer])
+        if not report['snapshot']['result']['anomalies']: w.writerow([report['id'],report['version'],report['content_hash'],report['source_run_id'],'','','','','','','','',frozen_disclaimer]+([''] if segmented else []))
         return ('\ufeff'+buf.getvalue()).encode(), 'text/csv; charset=utf-8'
     if fmt!='pdf': raise ValueError('不支持的格式')
     from reportlab.pdfgen.canvas import Canvas

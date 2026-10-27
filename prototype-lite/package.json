@@ -13,6 +13,7 @@
     "dev:mock": "ANALYSIS_MOCK=1 vite --port 5186",
     "test:ui": "node scripts/verify-m1-ui.mjs",
     "test:capture": "node scripts/verify-m1-capture.mjs",
+    "test:capture-resume": "node scripts/verify-m1-capture-resume.mjs",
     "test:sensor": "node scripts/verify-m1-sensor.mjs"
   },
   "dependencies": {

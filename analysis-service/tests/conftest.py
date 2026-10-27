@@ -49,6 +49,9 @@ def seal(clients,sid,data,aid='AS-1'):
 
 
 def fake_compute(s,r,progress):
+    s=copy.deepcopy(s)
+    for asset in s['assets']:
+        if asset['kind'] in ('audio','video'):asset['duration_seconds']=3
     aid=s['assets'][0]['id']
     e=dict(id='EV-001',session_id=s['id'],run_id=r['id'],event='anomaly',ts=1.,modality='voice',type='停顿升高',severity='WARN',confidence=.7,lamp='orange',advice='',participant_id='P2',source_assets=[dict(id=aid,name='sample.wav',kind='audio')],attribution=dict(observation=[dict(modality='voice',text='观察逗号,换行\n=公式',ts_from=0.,ts_to=2.)],candidate_rules=[],conclusion={}),cap_note=None)
     fill_attribution(e,load_rules())

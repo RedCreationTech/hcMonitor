@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, App, Button, Card, Drawer, Empty, Input, InputNumber, Progress, Select, Space, Table, Tag } from 'antd';
+import { Alert, App, Button, Card, Checkbox, Drawer, Empty, Input, InputNumber, Progress, Select, Space, Table, Tag } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi, useStream } from '../../api/useStream';
 import { useActor } from '../../shells/session';
@@ -17,18 +17,21 @@ export function OfflineResultPage() {
   const s = state?.sessions.find(s => s.id === id); const [history, setHistory] = useState<Array<{ id: string; status: string }>>([]); const [jobs, setJobs] = useState<Job[]>([]);
   const [old, setOld] = useState<OfflineResult>(); const result = old ?? s?.offline;
   const [turns, setTurns] = useState<DialogueTurn[]>([]); const [topics, setTopics] = useState<Topic[]>([]); const [base, setBase] = useState<number>(); const [dirty, setDirty] = useState(false);
+  const [rangeDirty, setRangeDirty] = useState(false); const [rangeBase, setRangeBase] = useState<number>();
+  const [ranges, setRanges] = useState<Array<{asset_id: string; start: number; end: number}>>([]); const [rangesVerified, setRangesVerified] = useState(false); const [rangeNote, setRangeNote] = useState('');
   const [sensor, setSensor] = useState<{ id: string; name: string; time: number }>();
   const [asset, setAsset] = useState(''); const media = useRef<HTMLVideoElement>(null); const seekTo = useRef(0); const [cursor, setCursor] = useState(0);
   const [detail, setDetail] = useState<AnomalyEvent>(); const [review, setReview] = useState<Review>({ behavior: 'abstain', explanation: 'abstain', note: '' }); const [reviewing, setReviewing] = useState(false); const [reviews, setReviews] = useState<Record<string, Review>>({});
   const canEdit = actor?.role === 'analyst' && !old && !s?.offline_job; const canReview = actor?.role === 'reviewer' && !old && !s?.stale;
   const reload = () => { if (!s) return; void api<typeof history>(`/sessions/${s.id}/runs`).then(setHistory); void api<Job[]>(`/sessions/${s.id}/jobs`).then(setJobs); if (result?.run_id) void api<Record<string, Review>>(`/runs/${result.run_id}/reviews`).then(setReviews); };
   useEffect(reload, [s?.id, s?.offline_job?.id, s?.offline_job?.progress, s?.offline_job?.stage, s?.offline_job?.status, result?.run_id]);
+  useEffect(() => { if (!rangeDirty) { setRanges(s?.analysis_intervals?.ranges ?? []); setRangesVerified(false); setRangeNote(s?.analysis_intervals?.note ?? ''); setRangeBase(s?.revision); } }, [s?.id, s?.revision, rangeDirty]);
   useEffect(() => {
     if (!s || !result || dirty) return;
     setTurns(old ? result.turns : s.corrections?.turns ?? result.turns); setTopics((old ? undefined : s.corrections?.topics) ?? result.impacts.map(i => ({ asset_id: (i as unknown as Topic).asset_id ?? s.primary_asset_id!, label: i.label, boundary: i.boundary })));
     setBase(s.revision); if (!asset) setAsset(s.primary_asset_id ?? s.assets?.[0]?.id ?? '');
   }, [result?.run_id, s?.revision, dirty]);
-  useEffect(() => { const listener = (event: BeforeUnloadEvent) => { if (dirty) event.preventDefault(); }; window.addEventListener('beforeunload', listener); return () => window.removeEventListener('beforeunload', listener); }, [dirty]);
+  useEffect(() => { const listener = (event: BeforeUnloadEvent) => { if (dirty || rangeDirty) event.preventDefault(); }; window.addEventListener('beforeunload', listener); return () => window.removeEventListener('beforeunload', listener); }, [dirty, rangeDirty]);
   if (!s) return <div className="page"><Empty description="任务不存在、用途已受限或尚未取得分派权限" /></div>;
   const execute = async (path: string, body: unknown = {}) => { try { await api(path, body); reload(); message.success('操作已保存'); } catch (e) { message.error((e as Error).message); } };
   const start = () => execute(`/sessions/${s.id}/analyze-offline`, { request_key: `${s.id}-${s.revision}-${Date.now()}` });
@@ -38,10 +41,16 @@ export function OfflineResultPage() {
     try { const r = await api<{ revision: number }>(`/sessions/${s.id}/corrections`, { revision: base, turns, topics }); setBase(r.revision); setDirty(false); message.success('已保存修订；请创建新运行，旧结果保留'); }
     catch (e) { message.error((e as Error).message + '；本地编辑已保留'); }
   };
+  const saveRanges = async () => {
+    try {
+      await api(`/sessions/${s.id}/analysis-intervals`, { revision: rangeBase, ranges, verified: rangesVerified, note: rangeNote });
+      setRangeDirty(false); message.success('有效区间已保存；请按修订重算，旧结果与报告保留');
+    } catch (e) { message.error((e as Error).message + '；区间草稿已保留'); }
+  };
   const split = (index: number) => { const t = turns[index]; const mid = (t.ts + (t.end ?? t.ts)) / 2; if (mid <= t.ts) return; const point = Math.max(1, Math.floor(t.text.length / 2)); const a = { ...t, end: mid, text: t.text.slice(0, point) }; const b = { ...t, id: 'T-' + crypto.randomUUID().slice(0, 8), ts: mid, text: t.text.slice(point) || '待校正' }; setTurns([...turns.slice(0, index), a, b, ...turns.slice(index + 1)]); setDirty(true); };
   const merge = (index: number) => { const a = turns[index], b = turns[index + 1]; if (!b || a.asset_id !== b.asset_id || a.speaker !== b.speaker) return message.warning('只可合并同素材、同角色的相邻轮次'); setTurns([...turns.slice(0, index), { ...a, end: b.end, text: a.text + b.text }, ...turns.slice(index + 2)]); setDirty(true); };
   const selectedAsset = s.assets?.find(a => a.id === asset);
-  return <div className="page"><div className="page-head"><Button onClick={() => { if (!dirty || window.confirm('尚有未保存修订，确定离开？')) nav('/t/workstation'); }}>返回任务</Button><h3>证据工作区</h3><span>{s.subject_code} · {s.scene}</span><span className="grow" />{actor?.role === 'analyst' && <Button type="primary" disabled={!!s.offline_job || dirty} onClick={start}>{s.stale ? '按修订重算' : '开始 / 重试分析'}</Button>}<Button onClick={() => nav(`/t/workstation/reports?session=${s.id}`)}>版本报告</Button></div>
+  return <div className="page"><div className="page-head"><Button onClick={() => { if (!(dirty || rangeDirty) || window.confirm('尚有未保存修订，确定离开？')) nav('/t/workstation'); }}>返回任务</Button><h3>证据工作区</h3><span>{s.subject_code} · {s.scene}</span><span className="grow" />{actor?.role === 'analyst' && <Button type="primary" disabled={!!s.offline_job || dirty || rangeDirty} onClick={start}>{s.stale ? '按修订重算' : '开始 / 重试分析'}</Button>}<Button onClick={() => nav(`/t/workstation/reports?session=${s.id}`)}>版本报告</Button></div>
     {s.stale && <Alert type="warning" message="以下算法结果来自旧修订，不能送审或发布；请完成重算和重新复核。" />}
     {old && <Alert type="info" message="正在查看不可变历史运行；校正与复核操作关闭。" action={<Button onClick={() => setOld(undefined)}>返回当前运行</Button>} />}
     {s.offline_job && <Card size="small"><p>{s.offline_job.status === 'queued' ? '排队中' : '正在分析'} · {s.offline_job.stage}</p><Progress percent={s.offline_job.progress} /><p className="sub">此处显示阶段进度，不代表剩余时间；本地模型加载或长步骤期间，百分比会暂时保持不变。</p><Button onClick={() => execute(`/jobs/${s.offline_job!.id}/cancel`)}>请求取消</Button></Card>}
@@ -52,6 +61,19 @@ export function OfflineResultPage() {
         {sensor && <Alert type="info" message={`采样文件 ${sensor.name} · 文件内游标 ${sensor.time.toFixed(2)} 秒`} description="已定位对应趋势切片；采样文件不按音视频解码。" action={<Button onClick={() => { setSensor(undefined); setCursor(seekTo.current); }}>返回音视频</Button>} />}
         {selectedAsset && !sensor && <video ref={media} controls preload="metadata" aria-label="原始证据播放器" src={`/v1/sessions/${s.id}/assets/${asset}/media`} style={{ display: 'block', width: '100%', maxHeight: selectedAsset.kind === 'audio' ? 80 : 360, background: '#111', marginTop: 12 }} onLoadedMetadata={() => { if (media.current) media.current.currentTime = seekTo.current; }} onTimeUpdate={() => setCursor(media.current?.currentTime ?? 0)} onError={() => message.warning('原件不可访问，请核对授权与网络')} />}<span>当前游标 {cursor.toFixed(2)} 秒 · 各素材独立时轴</span>
       </Card>
+      {!old && (s.capture?.gaps?.length || s.analysis_intervals) ? <Card size="small" title="暂停 / 故障后的连续有效区间" style={{ marginTop: 12 }}>
+        <Alert type="info" message={s.capture?.mode === 'independent-segments-v1' ? '新录制已按独立原件分段，有效片段正常分析；也可进一步限定连续有效范围。' : '旧版合并录制没有可靠的暂停文件坐标。请回看原件，按文件内秒数登记连续有效范围，再保存并重算；不要直接使用含暂停的现场计时。'} />
+        <p className="sub">仅分析所登记素材的有效区间，其余范围排除。基线、话题、连续窗与融合均不跨区间；未登记的其他素材仍遵循自身质量规则。</p>
+        {ranges.map((r,i) => <Space wrap key={i} style={{ margin: '6px 0' }}>
+          <Select aria-label={`区间${i+1}素材`} style={{ width: 260 }} value={r.asset_id} disabled={!canEdit || dirty} onChange={asset_id => { setRangeDirty(true); setRanges(ranges.map((x,j) => j===i ? {...x,asset_id,start:0,end:1} : x)); }} options={s.assets?.filter(a => ['audio','video'].includes(a.kind)).map(a => ({value:a.id,label:a.name}))} />
+          <InputNumber aria-label={`区间${i+1}开始秒`} min={0} precision={2} value={r.start} disabled={!canEdit || dirty} onChange={v => { setRangeDirty(true); setRanges(ranges.map((x,j) => j===i ? {...x,start:v ?? 0} : x)); }} />
+          <span>至</span><InputNumber aria-label={`区间${i+1}结束秒`} min={0} precision={2} value={r.end} disabled={!canEdit || dirty} onChange={v => { setRangeDirty(true); setRanges(ranges.map((x,j) => j===i ? {...x,end:v ?? 0} : x)); }} />
+          <Button onClick={() => seek(r.asset_id,r.start)}>回看起点</Button><Button disabled={!canEdit || dirty} onClick={() => { setRangeDirty(true); setRanges(ranges.filter((_,j) => i!==j)); }}>移除此区间</Button>
+        </Space>)}
+        <div><Button disabled={!canEdit || dirty || ranges.length>=12} onClick={() => { const a=s.assets?.find(a => ['audio','video'].includes(a.kind)); if (a) { setRangeDirty(true); setRanges([...ranges,{asset_id:a.id,start:0,end:1}]); } }}>添加连续有效区间</Button></div>
+        <Input aria-label="有效区间核验依据" style={{ margin: '8px 0' }} placeholder="填写回看核验依据；区间不能跨越暂停或故障边界" value={rangeNote} disabled={!canEdit || dirty} onChange={e => { setRangeDirty(true); setRangeNote(e.target.value); }} />
+        <Space wrap><Checkbox checked={rangesVerified} disabled={!canEdit || dirty} onChange={e => setRangesVerified(e.target.checked)}>已逐段回看，确认区间内连续有效</Checkbox><Button disabled={!canEdit || dirty || !rangesVerified || !rangeNote.trim() || !ranges.length} onClick={saveRanges}>保存有效区间并标记待重算</Button>{rangeDirty && <Button onClick={() => setRangeDirty(false)}>放弃区间草稿</Button>}</Space>
+      </Card> : null}
       <Card title="逐句转写与匿名角色校正" size="small" style={{ marginTop: 12 }} extra={<Space>{dirty && <Tag color="orange">本地草稿未保存</Tag>}<Button disabled={!canEdit || !dirty} onClick={save}>保存修订</Button><Button disabled={!dirty} onClick={() => { setDirty(false); setTurns(s.offline?.turns ?? []); }}>放弃本地编辑</Button></Space>}>
         <p className="sub">匿名声纹不等于已确认身份。未知与重叠不计入个人基线或解释；分割默认取中点，保存前可调整时间和文字。保存后全链重算。</p>
         <Table rowKey={t => t.id ?? `${t.asset_id}-${t.ts}`} dataSource={turns} size="small" pagination={{ pageSize: 8 }} scroll={{ x: 1080 }} columns={[

@@ -21,10 +21,10 @@ def _consolidate(events: list[RawEvent], gap_s: float = 60.0) -> list[RawEvent]:
     groups: dict[tuple, list[RawEvent]] = {}
     for e in events:
         if e.severity in ("INFO", "WARN"):
-            groups.setdefault((e.modality, e.type, e.asset_id, e.cap_note, e.participant_id), []).append(e)
+            groups.setdefault((e.modality, e.type, e.asset_id, e.cap_note, e.participant_id, e.segment_id), []).append(e)
         else:
             out.append(e)
-    for (mod, typ, _asset, _cap, _person), xs in groups.items():
+    for (mod, typ, _asset, _cap, _person, _segment), xs in groups.items():
         xs.sort(key=lambda e: e.ts)
         cur = None
         for e in xs:
@@ -40,7 +40,7 @@ def _consolidate(events: list[RawEvent], gap_s: float = 60.0) -> list[RawEvent]:
                 cur = RawEvent(ts=e.ts, modality=mod, type=typ, severity=e.severity,
                                confidence=e.confidence, deviation=e.deviation,
                                window=e.window, metrics=dict(e.metrics),
-                               asset_id=e.asset_id, asset_ids=list(e.asset_ids), participant_id=e.participant_id, member_ids=list(e.member_ids), cap_note=e.cap_note)
+                               asset_id=e.asset_id, asset_ids=list(e.asset_ids), participant_id=e.participant_id, member_ids=list(e.member_ids), cap_note=e.cap_note, segment_id=e.segment_id)
         if cur:
             out.append(cur)
     return sorted(out, key=lambda e: e.ts)
@@ -53,6 +53,9 @@ def fuse(events: list[RawEvent], session_id: str,
     流程：同型低频合并降噪 → 45s 窗聚合升级。原事件全部保留（可逐条追溯），
     另产 ESCALATED 综合事件，metrics 列出成员——「聚合」是新增结论，不吞细节。
     """
+    segments={e.segment_id for e in events}
+    if len(segments)>1:
+        return sorted([e for part in segments for e in fuse([x for x in events if x.segment_id==part],session_id,window_s)],key=lambda e:e.ts)
     events = _consolidate(events)
     capped = [e for e in events if e.cap_note]
     fuseable = sorted((e for e in events if not e.cap_note), key=lambda e: e.ts)
@@ -74,7 +77,8 @@ def fuse(events: list[RawEvent], session_id: str,
                     severity="ESCALATED",
                     confidence=round(min(0.95, max(e.confidence for e in in_win) + 0.1), 2),
                     deviation=max(e.deviation for e in in_win),
-                    window=(start, end),
+                    window=(min(e.window[0] for e in in_win), max(e.window[1] for e in in_win)) if in_win[0].segment_id else (start, end),
+                    segment_id=in_win[0].segment_id,
                     member_ids=sorted({member for e in in_win for member in e.member_ids}),
                     asset_ids=sorted({aid for e in in_win for aid in (e.asset_ids or [e.asset_id]) if aid}),
                     metrics={"命中模态": ("+".join(sorted(mods)), "模态"),

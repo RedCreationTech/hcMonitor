@@ -23,3 +23,4 @@ class RawEvent:
     member_ids: list[str] = field(default_factory=list)
     asset_ids: list[str] = field(default_factory=list)
     cap_note: Optional[str] = None   # 非 None = 趋势层封顶
+    segment_id: Optional[str] = None

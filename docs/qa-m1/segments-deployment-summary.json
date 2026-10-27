@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "health": {
+    "status": "ok",
+    "pipeline": "m1-2.1",
+    "mode": "real",
+    "storage": "postgresql",
+    "initialized": true
+  },
+  "business_counts_retained": {
+    "sessions": 11,
+    "reports": 1,
+    "runs": 1
+  },
+  "new_interval_endpoint": true
+}

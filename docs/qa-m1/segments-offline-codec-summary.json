@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "packaged_static_ffmpeg": true,
+  "video_encoder": "libx264",
+  "independent_audio_video_clip": true,
+  "network_used": false
+}

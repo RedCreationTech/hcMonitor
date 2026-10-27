@@ -289,11 +289,14 @@ def create_session(body:dict,user=Depends(principal)):
     analyst=body.get('analyst_id',user['id'] if user['role']=='analyst' else 'W-02');reviewer=body.get('reviewer_id','R-01')
     for identifier,role in [(analyst,'analyst'),(reviewer,'reviewer')]:
         member=store.get('users',identifier);need(member and member['role']==role and project in member['projects'],'分派成员与项目不匹配')
+    from .capture import validate_capture
+    try:capture=validate_capture(body.get('capture'),assets)
+    except (ValueError,TypeError,KeyError) as exc:raise HTTPException(422,str(exc))
     s=dict(id=uid('SES'),project_id=project,subject_code=str(body.get('subject_code','匿名对象'))[:80],scene=str(body.get('scene','访谈'))[:120],
         form='B',collector=user['name'],analyst=analyst,owner_id=user['id'],analyst_id=analyst,reviewer_id=reviewer,
         status='draft',started_at=now_str(),duration_seconds=0,peak_lamp='green',anomaly_count=0,marker_count=0,
         consent_doc=body['consent_doc'],participants=participants,modality_set=[],source='live' if body.get('source')=='live' else 'imported',
-        assets=assets,asset=assets[0],primary_asset_id=primary,capture=body.get('capture'),offline_job=None,offline=None,revision=1,stale=False,restricted=False)
+        assets=assets,asset=assets[0],primary_asset_id=primary,capture=capture,offline_job=None,offline=None,revision=1,stale=False,restricted=False)
     with store.transaction(): store.upsert_session(s);store.audit(user['id'],'session.create',s['id'])
     return dict(id=s['id'],revision=1)
 
@@ -446,6 +449,23 @@ def corrections(sid:str,body:dict,user=Depends(principal)):
         s['corrections']=corrected;s['revision']+=1;s['stale']=True
         store.upsert_session(s);store.audit(user['id'],'evidence.revise',f"{sid}/revision{s['revision']}")
     return dict(ok=True,revision=s['revision'],stale=True,impact='全素材重算；旧run、原文、复核及已发布报告保留')
+
+
+@app.post('/v1/sessions/{sid}/analysis-intervals')
+def analysis_intervals(sid:str,body:dict,user=Depends(principal)):
+    require(user,'edit')
+    from .capture import validate_intervals
+    with store.transaction():
+        s=ses(sid,user);mutable(s);expected(s,body)
+        need(s.get('offline'),'请先取得可回看的原件时长与转写',409)
+        need(body.get('verified') is True and isinstance(body.get('note'),str) and body['note'].strip(),'须回看确认连续有效范围并填写依据')
+        try:ranges=validate_intervals(body.get('ranges'),s['assets'])
+        except (ValueError,TypeError,KeyError) as exc:raise HTTPException(422,str(exc))
+        s['analysis_intervals']=dict(ranges=ranges,verified_by=user['id'],note=body['note'][:1000],
+            asset_hashes={a['id']:a['sha256'] for a in s['assets'] if any(r['asset_id']==a['id'] for r in ranges)})
+        s['revision']+=1;s['stale']=True
+        store.upsert_session(s);store.audit(user['id'],'evidence.analysis_intervals',f"{sid}/revision{s['revision']}")
+    return dict(ok=True,revision=s['revision'],stale=True)
 
 
 @app.post('/v1/sessions/{sid}/events/{eid}/review')

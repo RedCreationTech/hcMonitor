@@ -1,0 +1,55 @@
+{
+  "fixture": "repository synthetic demo, NOT human accuracy evaluation",
+  "network": "socket.connect blocked; cold local loading",
+  "input_sha256": "4539ef43a00d171a93f5f3df2876c40e7ff22a547146d96a40ffb51cad16db74",
+  "session_id": "SES-a21b94060c934616",
+  "run_ids": [
+    "RUN-cf13b374c5a444ad",
+    "RUN-769230c17d5c4ade"
+  ],
+  "turns": 28,
+  "speaker_clusters": 3,
+  "events": 10,
+  "topics": 11,
+  "narrative": {
+    "status": "generated",
+    "text": "观察提示信息前后矛盾（NLI 不一致），规则提供候选解释：陈述一致性风险（需人工核验）；需要人工核验及排除替代因素。\n本系统输出行为风险提示，不构成临床心理诊断；所有结论为模型推断，最终判断由现场人员与后方分析师共同作出。",
+    "citations": [
+      {
+        "run_id": "RUN-769230c17d5c4ade",
+        "event_id": "EV-010",
+        "rule_id": "R-Semantic-Contradict"
+      }
+    ],
+    "model_hash": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+    "elapsed_seconds": 20.101,
+    "method": "local-constrained-clauses-v1"
+  },
+  "quality": [
+    {
+      "asset_id": "AS-QA",
+      "quality": "degraded",
+      "baseline": "insufficient"
+    }
+  ],
+  "elapsed_seconds": 314.329,
+  "report_id": "RP-cf1b709b80444a53",
+  "exports": [
+    {
+      "format": "pdf",
+      "sha256": "8da166b799f7a22e5e10987fca8b0b6e20fab9fac93822602a65e6e4dc62a607",
+      "bytes": 74245
+    },
+    {
+      "format": "html",
+      "sha256": "4b1e86a49d5776a3ab11796ac6ccf419c2fb7433921e706d82e5711195bc2f92",
+      "bytes": 20354
+    },
+    {
+      "format": "csv",
+      "sha256": "c4f4908b5c4a9b0999b60b9eaf1a2a89d9545a704a4d7c5fbd546c862c5324eb",
+      "bytes": 7018
+    }
+  ],
+  "audit_chain": true
+}

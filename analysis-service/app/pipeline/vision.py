@@ -389,7 +389,8 @@ def run(video_path: Path, out_dir: Path, progress_cb=None) -> dict:
     for cl in (fm, pose, hands):
         cl.close()
 
-    print(f"[vision] 帧数={n} 时长={ts[-1]:.1f}s face={face_rate:.0%} pose={pose_rate:.0%} "
+    if not n:notes.append('无可解码视频帧；视觉通道不可用')
+    print(f"[vision] 帧数={n} 时长={ts[-1] if ts else 0:.1f}s face={face_rate:.0%} pose={pose_rate:.0%} "
           f"事件={len(anomalies)}")
     return {"anomalies": sorted(anomalies, key=lambda e: e.ts),
             "modality_available": modality_available,

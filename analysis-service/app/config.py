@@ -32,7 +32,7 @@ NLI_HF = "IDEA-CCNL/Erlangshen-Roberta-330M-NLI"  # 中文 NLI 矛盾初筛（Mo
 MS_LLM_GGUF = "Qwen/Qwen2.5-0.5B-Instruct-GGUF"     # 归因叙述组装（Q4_K_M）
 
 # ── 判定口径 ─────────────────────────────────────────────────────────
-PIPELINE_VERSION = "m1-2.0"     # 与实时链共用的口径版本号（导出件对账读这一行）
+PIPELINE_VERSION = "m1-2.1"     # 连续片段独立分析；旧运行和报告保持原版本
 DISCLAIMER = ("本系统输出行为风险提示，不构成临床心理诊断；所有结论为模型推断，"
               "最终判断由现场人员与后方分析师共同作出。")
 

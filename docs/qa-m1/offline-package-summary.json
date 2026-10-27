@@ -1,9 +1,10 @@
 {
-  "files": 7712,
-  "manifest_sha256": "c74a093583322cb239e49e88aee29a8b3cd900c8615355bb58ed7e4cf336032c",
+  "files": 7715,
+  "manifest_sha256": "ae8e9e828ece753976b2a955756822c1190b2d57930ab51a9a0e2a197222e620",
   "clean": true,
   "platform": "macOS 26.5.1 Intel x86_64; physical clean machine remains manual acceptance",
   "current_source_synced": true,
   "private_credentials_included": false,
-  "ui_revision": "2026-10-27 role dropdown and analysis phase progress"
+  "ui_revision": "2026-10-27 continuous recording segments and verified file ranges",
+  "pipeline": "m1-2.1"
 }

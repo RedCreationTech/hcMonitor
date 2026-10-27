@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "fixture": "Chrome synthetic camera/microphone; actual local speech/acoustic/semantic/vision/rppg; NOT human accuracy",
+  "independent_files": 2,
+  "normal_analysis_for_both": true,
+  "qualities": [
+    {
+      "asset_id": "AS-6fc00841",
+      "quality": "degraded",
+      "baseline_status": "insufficient",
+      "modalities": [
+        "voice"
+      ]
+    },
+    {
+      "asset_id": "AS-5475236c",
+      "quality": "degraded",
+      "baseline_status": "insufficient",
+      "modalities": [
+        "voice"
+      ]
+    }
+  ],
+  "legacy_ranges": [
+    {
+      "id": "SEG-001",
+      "start": 0.0,
+      "end": 0.8,
+      "quality": "degraded",
+      "quality_note": "；个人声学基线不足，不生成个人声学偏离；说话人身份待人工绑定；无个人基线或个人心理解释；人脸检出率 0%（阈值 60%）；Pose 检出率 0%；degraded 片段 1 段，首段起于 0s，已剔除出判定；人脸模态不可用（整体检出率过低）；有效样本不足（3 帧），无法估计心率",
+      "baseline_status": "insufficient"
+    },
+    {
+      "id": "SEG-002",
+      "start": 1.2,
+      "end": 2.0,
+      "quality": "degraded",
+      "quality_note": "；个人声学基线不足，不生成个人声学偏离；说话人身份待人工绑定；无个人基线或个人心理解释；视觉通道失败：list index out of range；有效样本不足（0 帧），无法估计心率",
+      "baseline_status": "insufficient"
+    }
+  ],
+  "source_hash_retained": true,
+  "elapsed_seconds": 107.87
+}

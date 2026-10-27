@@ -222,6 +222,8 @@ export interface OfflineSlice {
 }
 
 export interface SessionSummary {
+  capture?: { mode?: string; gaps?: Array<{ at: number; kind: string }> };
+  analysis_intervals?: { ranges: Array<{ asset_id: string; start: number; end: number }>; note: string; verified_by: string };
   revision?: number; stale?: boolean; restricted?: boolean; current_run_id?: string;
   participants?: Array<{ id: string; role: string; purposes: Record<string, boolean> }>;
   primary_asset_id?: string;

@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "fixture": "Chrome virtual devices and explicit synthetic detector",
+  "failedStartDoesNotLeaveEmptyCache": true,
+  "pauseThenStop": true,
+  "twoFileResume": true,
+  "failedResumeRetainsValidPart": true,
+  "emptyPartAudited": true,
+  "partialUploadRetryAfterReload": true,
+  "legacyRangeEditor": true,
+  "newRevisionAndRun": true,
+  "oldRunRetained": true,
+  "historicalViewDoesNotShowCurrentRanges": true,
+  "consoleErrors": []
+}

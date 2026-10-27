@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "device": "Chrome synthetic camera+microphone; NOT physical device acceptance",
+  "source": "live",
+  "assetSealed": true,
+  "independentFiles": 2,
+  "mode": "independent-segments-v1",
+  "segments": [
+    {
+      "asset_id": "AS-0c902137",
+      "wall_start": 0.004799999997019768,
+      "wall_end": 2.47379999999702,
+      "closed_by": "pause"
+    },
+    {
+      "asset_id": "AS-8cb54e9e",
+      "wall_start": 3.3145,
+      "wall_end": 5.2195,
+      "closed_by": "stop"
+    }
+  ],
+  "timeline": [
+    {
+      "at": 0,
+      "kind": "start"
+    },
+    {
+      "at": 2.487399999991059,
+      "kind": "pause"
+    },
+    {
+      "at": 3.361,
+      "kind": "resume"
+    },
+    {
+      "at": 5.227,
+      "kind": "stop"
+    }
+  ],
+  "localCacheCleared": true,
+  "consoleErrors": []
+}

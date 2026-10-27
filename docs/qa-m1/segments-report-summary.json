@@ -1,0 +1,19 @@
+{
+  "pdf": {
+    "bytes": 77680,
+    "sha256": "2734b3c7a9cc7caa984242b109d338cf5ed9e1200d19be614875d0ef059a125c"
+  },
+  "html": {
+    "bytes": 18354,
+    "sha256": "a516e87cdc9b54e70c15be71cd9fcd333d89bcae405646f04268eea56311df1a"
+  },
+  "csv": {
+    "bytes": 402,
+    "sha256": "4baa81591821981d55bdc582f762e989f752e11dede174dd3b0333a0fb09bbe2"
+  },
+  "passed": true,
+  "fixture": "synthetic recording; report format validation",
+  "pages": 8,
+  "verified_ranges_in_fixed_appendix": true,
+  "all_pages_visually_checked": true
+}
