@@ -1,7 +1,7 @@
 /* S-01 席位登录 + 登录态存储。分析侧终端（工作台 / 值守 / 分析壳手机 / 后台）共用一次登录，
  * 与真实产品一致：席位身份决定能进哪个终端、能按哪个按钮（服务端同样校验）。 */
 import { createContext, useCallback, useContext, useMemo, useState, useEffect, type ReactNode } from 'react';
-import { App, Button, Input, Segmented } from 'antd';
+import { App, Button, Input, Select } from 'antd';
 import { clearStream, useApi } from '../api/useStream';
 import { mockMode } from '../shared/runtime';
 import type { MemberRole } from '../shared/types';
@@ -16,6 +16,14 @@ export interface Actor {
 const KEY = 'yansin.actor';
 const ROLE_LABEL: Record<MemberRole, string> = { reader: '报告阅读者', auditor: '审计员',  analyst: '分析师', reviewer: '复核人', collector: '采集员', admin: '管理员' };
 const DEMO_ID: Record<MemberRole, string> = { reader: 'READ-01', auditor: 'AUD-01',  analyst: 'W-02', reviewer: 'R-01', collector: 'C-04', admin: 'A-01' };
+const ROLE_DESCRIPTION: Record<MemberRole, string> = {
+  analyst: '导入素材、校正证据、运行分析和编制报告。',
+  reviewer: '独立复核证据，批准、驳回和发布报告。',
+  collector: '现场录制或上传素材，交付给指定分析师。',
+  reader: '阅读获授权的报告版本，按权限下载和打印。',
+  admin: '管理项目分派、用途限制与审计，不自动拥有业务读取权。',
+  auditor: '查看审计记录、校验审计链，不自动拥有业务读取权。',
+};
 
 interface Ctx {
   actor: Actor | null;
@@ -80,15 +88,28 @@ export function LoginScreen({ purpose }: { purpose: string }) {
         </div>
         <div className="login-purpose">{purpose}</div>
 
-        <Segmented
-          block
-          value={role}
-          onChange={(v) => {
-            setRole(v as MemberRole);
-            setEmployee(DEMO_ID[v as MemberRole]);
-          }}
-          options={(Object.keys(ROLE_LABEL) as MemberRole[]).map((r) => ({ label: ROLE_LABEL[r], value: r }))}
-        />
+        <div className="login-field">
+          <label htmlFor="login-role">登录角色</label>
+          <Select
+            id="login-role"
+            aria-label="登录角色"
+            style={{ width: '100%' }}
+            value={role}
+            onChange={(v: MemberRole) => {
+              setRole(v);
+              setEmployee(DEMO_ID[v]);
+              setPin('');
+            }}
+            options={(Object.keys(ROLE_LABEL) as MemberRole[]).map((r) => ({ label: ROLE_LABEL[r], value: r }))}
+            optionRender={(option) => (
+              <div style={{ whiteSpace: 'normal', padding: '3px 0' }}>
+                <div>{option.label} · {DEMO_ID[option.data.value]}</div>
+                <div style={{ color: 'var(--sub)', fontSize: 12 }}>{ROLE_DESCRIPTION[option.data.value]}</div>
+              </div>
+            )}
+          />
+          <span>{ROLE_DESCRIPTION[role]}</span>
+        </div>
 
         <label className="login-field">
           <span>工号</span>

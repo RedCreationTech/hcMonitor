@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-27",
+  "passed": true,
+  "roles": 6,
+  "fullLabels": true,
+  "descriptions": true,
+  "accountAutofill": true,
+  "passwordClearedOnRoleChange": true,
+  "keyboard": true,
+  "realAnalystLogin": true,
+  "consoleErrors": []
+}
