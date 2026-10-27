@@ -43,7 +43,11 @@ export function SessionsPage() {
     <Table rowKey="id" size="small" dataSource={(state?.sessions ?? []).filter(s => `${s.id} ${s.subject_code} ${s.scene}`.includes(query))} columns={[
       { title: '任务', dataIndex: 'id' }, { title: '对象 / 场景', render: (_, s) => <>{s.subject_code}<div className="sub">{s.scene}</div></> },
       { title: '素材', render: (_, s) => <>{s.assets?.map(a => <div key={a.id}>{a.name} <Tag color={a.upload_status === 'complete' ? 'green' : 'orange'}>{a.upload_status === 'complete' ? '已封存' : '待上传'}</Tag>{a.upload_status !== 'complete' && canCapture && <Upload showUploadList={false} beforeUpload={file => { if (file.size !== a.size_bytes) { message.error('文件大小与登记不一致'); return false; } void uploadResumable(s.id, a.id, file).then(() => message.success('原件已续传并封存')).catch(e => message.error((e as Error).message)); return false; }}><Button size="small">续传该素材</Button></Upload>}</div>)}</> },
-      { title: '状态', render: (_, s) => s.offline_job ? <Progress percent={s.offline_job.progress} size="small" /> : <Tag color={s.stale ? 'orange' : s.offline ? 'green' : 'default'}>{s.stale ? '修订待重算' : s.offline ? '已生成结果' : '待分析'}</Tag> },
+      { title: '状态', width: 260, render: (_, s) => s.offline_job ? <div style={{ minWidth: 220 }}>
+        <Tag color="processing">{s.offline_job.status === 'queued' ? '排队中' : '正在分析'}</Tag>
+        <div>{s.offline_job.stage}</div><Progress percent={s.offline_job.progress} size="small" />
+        <div className="sub">阶段进度；模型加载或长步骤期间会暂停变化。</div>
+      </div> : <Tag color={s.stale ? 'orange' : s.offline ? 'green' : 'default'}>{s.stale ? '修订待重算' : s.offline ? '已生成结果' : '待分析'}</Tag> },
       { title: '操作', render: (_, s) => actor?.role !== 'collector' ? <Button onClick={() => nav(`/t/workstation/offline/${s.id}`)}>证据工作区</Button> : <span>采集交付给 {s.analyst}</span> },
     ]} />
     <Modal title={sid ? '继续上传：' + sid : '新建访谈与导入'} open={open} onCancel={() => !busy && setOpen(false)} maskClosable={false} onOk={create} confirmLoading={busy} okText={sid ? '重试并续传' : '保存并上传'} width={720}>

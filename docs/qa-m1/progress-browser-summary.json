@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-27",
+  "passed": true,
+  "engine": "delayed synthetic detector; real inference separately tested",
+  "taskListStage": true,
+  "workspaceStage": true,
+  "realWebSocket": true,
+  "progress16BeforeCompletion": true,
+  "completionTransition": true,
+  "consoleErrors": []
+}

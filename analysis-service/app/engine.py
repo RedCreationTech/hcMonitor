@@ -38,8 +38,10 @@ def environment():
 
 
 def compute(session, run, progress):
+    progress(1, '固定模型校验')
     from .model_inventory import frozen_inventory
     models=frozen_inventory()
+    progress(3, '运行环境与源码快照')
     source_code=code_hash();runtime=environment()
     assets = session['assets']
     root = ARTIFACTS / session['id'] / run['id']
@@ -55,7 +57,9 @@ def compute(session, run, progress):
     all_events, slices, all_turns, all_impacts = [], [], [], []
     manifests = []
     for index, asset in enumerate(assets):
-        progress(index / (len(assets)+1)*100, f"解析 {asset['name']}")
+        def stage(percent, label):
+            progress(5 + 75 * (index + percent / 100) / len(assets), f"{label} · {asset['name']}")
+        stage(0, '原件完整性检查')
         path = UPLOADS / session['id'] / asset['storage_key']
         if sha(path) != asset['sha256']: raise ValueError('原件hash不一致')
         out = root / asset['id']
@@ -65,9 +69,11 @@ def compute(session, run, progress):
         try:
             if asset['kind'] in ('audio', 'video'):
                 from .pipeline import speech, acoustic, semantic
+                stage(5, '音轨解码')
                 wav = preprocess.audio_to_wav(path)
                 with wave.open(str(wav)) as f: duration = f.getnframes()/f.getframerate()
                 asset['duration_seconds']=round(duration)
+                stage(15, '转写与说话人识别（含本地模型加载）')
                 original = speech.run(wav, out)['turns']
                 for i, t in enumerate(original):
                     t.update(id=f"{asset['id']}-T{i+1:04d}", asset_id=asset['id'])
@@ -78,11 +84,13 @@ def compute(session, run, progress):
                     note='采集含未可靠映射至文件轴的暂停/设备故障；本轮仅转写与回看，连续声学/视觉/生理指标、话题影响和心理解释均弃权。'
                     for turn in turns:turn['speech_rate']=None
                 else:
+                    stage(45, '声学特征与个人基线')
                     ac = acoustic.run(wav, turns, out)
                     baseline = ac.get('baseline_status')
                     if baseline!='available':quality='degraded';note+='；个人声学基线不足，不生成个人声学偏离'
                     corrected_topics = [t for t in session.get('corrections', {}).get('topics', []) if t['asset_id']==asset['id']]
                     try:
+                        stage(60, '话题与语义分析（含本地模型加载）')
                         sr = semantic.run(turns, out, corrected_topics or None)
                         impacts = sr['impacts']; mods=['voice']+(['semantic'] if any(t.get('text','').strip() for t in turns) else [])
                     except Exception as exc:
@@ -92,8 +100,10 @@ def compute(session, run, progress):
                         quality='degraded';note += '；说话人身份待人工绑定；无个人基线或个人心理解释'
                     if asset['kind'] == 'video':
                         from .pipeline import vision, rppg
+                        stage(75, '视觉证据分析')
                         try:vr=vision.run(path,out)
                         except Exception as exc:vr=dict(anomalies=[],modality_available=[],quality='degraded',quality_note='视觉通道失败：'+str(exc)[:180])
+                        stage(90, '视频生理质量检查')
                         try:rr=rppg.run(path,out)
                         except Exception as exc:rr=dict(anomalies=[],hr_series=[],quality='degraded',quality_note='视频生理通道失败：'+str(exc)[:180])
                         for result in (vr, rr):
@@ -106,6 +116,7 @@ def compute(session, run, progress):
                         if any(40 <= h.get('hr',0) <= 180 for h in rr.get('hr_series',[])):mods.append('physio')
             else:
                 from .pipeline import ext_nir, ext_mmwave
+                stage(20, '传感器文件解析与质量检查')
                 result = (ext_nir if asset['kind']=='nir' else ext_mmwave).run(path, out, asset['id'])
                 duration=result['duration_seconds']; events=result['anomalies']; trend=result['trend']
                 quality=result['quality']; note='部分采样因运动伪迹降级；不生成事件' if quality!='ok' else ''; mods=['physio']
@@ -129,6 +140,7 @@ def compute(session, run, progress):
             suppressed=[dict(id=f"{asset['id']}-{m}", reason=f'{m}不可用') for m in MODS if m not in mods],
             cap_note=CAP_NOTE if asset['kind'] in ('nir','mmwave') else None))
         manifests.append(dict(id=asset['id'], sha256=asset['sha256'], kind=asset['kind']))
+        stage(100, '素材处理结束')
     if not any(s['modality_available'] and s['asset_id']==session['primary_asset_id'] for s in slices): raise ValueError('主素材解析失败：'+ '; '.join(s['quality_note'] for s in slices))
     progress(85, '融合与可追溯叙述')
     # Independent file clocks never fuse with each other. Duplicate tracks cannot count as separate evidence.
@@ -151,6 +163,7 @@ def compute(session, run, progress):
             if sl['asset_id'] in [a['id'] for a in source]: sl['event_ids'].append(event['id'])
     # Persist artifact hashes before output publication; no generated artifacts can overwrite a previous run.
     files=[dict(path=str(p.relative_to(root)),sha256=sha(p)) for p in sorted(root.rglob('*')) if p.is_file()]
+    progress(90, '本地候选叙述与引用校验')
     result=dict(schema_version='2.0',run_id=run['id'], finished_at=__import__('datetime').datetime.now().isoformat(timespec='seconds'),
         asset_kind=next((a['kind'] for a in assets if a['id']==session['primary_asset_id']), 'audio'),
         assets=assets,slices=slices,modality_available=sorted({m for s in slices for m in s['modality_available']}),
@@ -160,6 +173,7 @@ def compute(session, run, progress):
         narrative=narrative.assemble(anomalies,run['id']), reviews={},
         manifest=dict(code_hash=source_code,environment=runtime,models=models,assets=manifests,files=files,revision=run['source_revision'],pipeline=PIPELINE_VERSION,
                       formula='topic-v1-relative-within-file',capture=session.get('capture'),clock_policy='independent-files-no-cross-fusion'))
+    progress(95, '结果指纹与固定版本复核')
     frozen_inventory()
     if code_hash()!=source_code:raise ValueError('执行期间代码已变化，拒绝发布混合版本结果')
     (root/'result.json').write_text(json.dumps(result,ensure_ascii=False,allow_nan=False),'utf-8')

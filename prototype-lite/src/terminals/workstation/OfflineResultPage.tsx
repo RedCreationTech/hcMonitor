@@ -22,7 +22,7 @@ export function OfflineResultPage() {
   const [detail, setDetail] = useState<AnomalyEvent>(); const [review, setReview] = useState<Review>({ behavior: 'abstain', explanation: 'abstain', note: '' }); const [reviewing, setReviewing] = useState(false); const [reviews, setReviews] = useState<Record<string, Review>>({});
   const canEdit = actor?.role === 'analyst' && !old && !s?.offline_job; const canReview = actor?.role === 'reviewer' && !old && !s?.stale;
   const reload = () => { if (!s) return; void api<typeof history>(`/sessions/${s.id}/runs`).then(setHistory); void api<Job[]>(`/sessions/${s.id}/jobs`).then(setJobs); if (result?.run_id) void api<Record<string, Review>>(`/runs/${result.run_id}/reviews`).then(setReviews); };
-  useEffect(reload, [s?.id, s?.offline_job?.progress, result?.run_id]);
+  useEffect(reload, [s?.id, s?.offline_job?.id, s?.offline_job?.progress, s?.offline_job?.stage, s?.offline_job?.status, result?.run_id]);
   useEffect(() => {
     if (!s || !result || dirty) return;
     setTurns(old ? result.turns : s.corrections?.turns ?? result.turns); setTopics((old ? undefined : s.corrections?.topics) ?? result.impacts.map(i => ({ asset_id: (i as unknown as Topic).asset_id ?? s.primary_asset_id!, label: i.label, boundary: i.boundary })));
@@ -44,7 +44,7 @@ export function OfflineResultPage() {
   return <div className="page"><div className="page-head"><Button onClick={() => { if (!dirty || window.confirm('尚有未保存修订，确定离开？')) nav('/t/workstation'); }}>返回任务</Button><h3>证据工作区</h3><span>{s.subject_code} · {s.scene}</span><span className="grow" />{actor?.role === 'analyst' && <Button type="primary" disabled={!!s.offline_job || dirty} onClick={start}>{s.stale ? '按修订重算' : '开始 / 重试分析'}</Button>}<Button onClick={() => nav(`/t/workstation/reports?session=${s.id}`)}>版本报告</Button></div>
     {s.stale && <Alert type="warning" message="以下算法结果来自旧修订，不能送审或发布；请完成重算和重新复核。" />}
     {old && <Alert type="info" message="正在查看不可变历史运行；校正与复核操作关闭。" action={<Button onClick={() => setOld(undefined)}>返回当前运行</Button>} />}
-    {s.offline_job && <Card size="small"><Progress percent={s.offline_job.progress} /><p>{s.offline_job.stage} · {s.offline_job.status}</p><Button onClick={() => execute(`/jobs/${s.offline_job!.id}/cancel`)}>请求取消</Button></Card>}
+    {s.offline_job && <Card size="small"><p>{s.offline_job.status === 'queued' ? '排队中' : '正在分析'} · {s.offline_job.stage}</p><Progress percent={s.offline_job.progress} /><p className="sub">此处显示阶段进度，不代表剩余时间；本地模型加载或长步骤期间，百分比会暂时保持不变。</p><Button onClick={() => execute(`/jobs/${s.offline_job!.id}/cancel`)}>请求取消</Button></Card>}
     <Space style={{ margin: '12px 0' }}><Select style={{ width: 400 }} placeholder="历史运行" value={old?.run_id} allowClear onClear={() => setOld(undefined)} options={history.map(r => ({ value: r.id, label: `${r.id} · ${r.status}` }))} onChange={async rid => { if (rid) { const r = await api<{ result?: OfflineResult }>(`/runs/${rid}`); if (r.result) { setDirty(false); setOld(r.result); setTurns(r.result.turns); setTopics(r.result.impacts.map(t => ({ ...t, asset_id: (t as unknown as Topic).asset_id }))); } else message.info('此运行没有成功结果'); } }} /><Button onClick={reload}>刷新作业</Button></Space>
     {jobs.filter(j => j.error).slice(-3).map(j => <Alert key={j.id} type="error" message={`${j.status} · ${j.error}`} />)}
     {!result ? <Empty description="素材封存后开始分析；失败或中断不会生成成功报告" /> : <>

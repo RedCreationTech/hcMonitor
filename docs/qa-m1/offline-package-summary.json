@@ -1,9 +1,9 @@
 {
   "files": 7712,
-  "manifest_sha256": "71586ce5e5019fed5132eb3b734da7ca29c84a63a31706cf170ebcaafc0fa41b",
+  "manifest_sha256": "c74a093583322cb239e49e88aee29a8b3cd900c8615355bb58ed7e4cf336032c",
   "clean": true,
   "platform": "macOS 26.5.1 Intel x86_64; physical clean machine remains manual acceptance",
   "current_source_synced": true,
   "private_credentials_included": false,
-  "ui_revision": "2026-10-27 role dropdown"
+  "ui_revision": "2026-10-27 role dropdown and analysis phase progress"
 }

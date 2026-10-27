@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "fixture": "Chrome synthetic recording; actual local ASR, not human accuracy",
+  "updates": [
+    {
+      "percent": 1,
+      "stage": "固定模型校验",
+      "elapsed_seconds": 0.0
+    },
+    {
+      "percent": 3,
+      "stage": "运行环境与源码快照",
+      "elapsed_seconds": 40.01
+    },
+    {
+      "percent": 5.0,
+      "stage": "原件完整性检查 · capture-AS-f6b836b9.webm",
+      "elapsed_seconds": 40.24
+    },
+    {
+      "percent": 8.75,
+      "stage": "音轨解码 · capture-AS-f6b836b9.webm",
+      "elapsed_seconds": 40.66
+    },
+    {
+      "percent": 16.25,
+      "stage": "转写与说话人识别（含本地模型加载） · capture-AS-f6b836b9.webm",
+      "elapsed_seconds": 41.36
+    },
+    {
+      "percent": 80.0,
+      "stage": "素材处理结束 · capture-AS-f6b836b9.webm",
+      "elapsed_seconds": 100.47
+    },
+    {
+      "percent": 85,
+      "stage": "融合与可追溯叙述",
+      "elapsed_seconds": 100.47
+    },
+    {
+      "percent": 90,
+      "stage": "本地候选叙述与引用校验",
+      "elapsed_seconds": 100.51
+    },
+    {
+      "percent": 95,
+      "stage": "结果指纹与固定版本复核",
+      "elapsed_seconds": 100.51
+    }
+  ],
+  "quality": "degraded",
+  "baseline_status": "capture_gap",
+  "elapsed_seconds": 100.55
+}
